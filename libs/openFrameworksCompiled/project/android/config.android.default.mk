@@ -91,7 +91,11 @@ else
 	HOST_PLATFORM = darwin-x86
 endif
 else ifneq (,$(findstring MINGW32_NT,$(shell uname)))
+ifneq ($(wildcard $(NDK_ROOT)/toolchains/$(TOOLCHAIN)/prebuilt/windows-x86_64),)
+	HOST_PLATFORM = windows-x86_64
+else
 	HOST_PLATFORM = windows
+endif
 	PWD = $(shell pwd)
 else
 ifneq ($(wildcard $(NDK_ROOT)/toolchains/$(TOOLCHAIN)/prebuilt/linux-x86_64),)
@@ -226,7 +230,7 @@ PLATFORM_OPTIMIZATION_CFLAGS_RELEASE = -Os
 PLATFORM_OPTIMIZATION_LDFLAGS_RELEASE = -s
 
 # DEBUG Debugging options (http://gcc.gnu.org/onlinedocs/gcc/Debugging-Options.html)
-PLATFORM_OPTIMIZATION_CFLAGS_DEBUG = -g3
+PLATFORM_OPTIMIZATION_CFLAGS_DEBUG = -O0 -g -D_DEBUG
 
 ################################################################################
 # PLATFORM CORE EXCLUSIONS
@@ -458,6 +462,7 @@ afterplatform:$(RESFILE)
 	@if [ "$(findstring armv5,$(ABIS_TO_COMPILE))" = "armv5" ]; then \
 		echo create gdb.setup for armeabi; \
 		echo "set solib-search-path $(PWD)/obj/local/armeabi:$(PWD)/libs/armeabi" > libs/armeabi/gdb.setup; \
+		echo "set sysroot $(SYSROOT)" >> libs/armeabi/gdb.setup; \
 		echo "directory $(NDK_ROOT)/platforms/$(NDK_PLATFORM)/arch-arm/usr/include" >> libs/armeabi/gdb.setup; \
 		echo "directory $(PWD)/src" >> libs/armeabi/gdb.setup; \
 		echo "directory $(NDK_ROOT)/sources/cxx-stl/system" >> libs/armeabi/gdb.setup; \
@@ -468,6 +473,7 @@ afterplatform:$(RESFILE)
 	@if [ "$(findstring armv7,$(ABIS_TO_COMPILE))" = "armv7" ]; then \
 		echo create gdb.setup for armeabi-v7a; \
 		echo "set solib-search-path $(PWD)/obj/local/armeabi-v7a:$(PWD)/libs/armeabi-v7a" > libs/armeabi-v7a/gdb.setup; \
+		echo "set sysroot $(SYSROOT)" >> libs/armeabi-v7a/gdb.setup; \
 		echo "directory $(NDK_ROOT)/platforms/$(NDK_PLATFORM)/arch-arm/usr/include" >> libs/armeabi-v7a/gdb.setup; \
 		echo "directory $(PWD)/src" >> libs/armeabi-v7a/gdb.setup; \
 		echo "directory $(NDK_ROOT)/sources/cxx-stl/system" >> libs/armeabi-v7a/gdb.setup; \
@@ -478,6 +484,7 @@ afterplatform:$(RESFILE)
 	@if [ "$(findstring x86,$(ABIS_TO_COMPILE))" = "x86" ]; then \
 		echo create gdb.setup for x86; \
 		echo "set solib-search-path $(PWD)/obj/local/x86:$(PWD)/libs/x86" > libs/x86/gdb.setup; \
+		echo "set sysroot $(SYSROOT)" >> libs/x86/gdb.setup; \
 		echo "directory $(NDK_ROOT)/platforms/$(NDK_PLATFORM)/arch-arm/usr/include" >> libs/x86/gdb.setup; \
 		echo "directory $(PWD)/src" >> libs/x86/gdb.setup; \
 		echo "directory $(NDK_ROOT)/sources/cxx-stl/system" >> libs/x86/gdb.setup; \
@@ -531,7 +538,7 @@ afterplatform:$(RESFILE)
 	
 $(RESFILE): $(DATA_FILES)
 	@echo compressing and copying resources from bin/data into res
-	cd $(PROJECT_PATH); \
+	cd "$(PROJECT_PATH)"; \
 	if [ -d "bin/data" ]; then \
 		mkdir -p res/raw; \
 		rm res/raw/$(RESNAME).zip; \
@@ -546,14 +553,14 @@ $(RESFILE): $(DATA_FILES)
 	fi
 
 install:	
-	cd $(OF_ROOT)/addons/ofxAndroid/ofAndroidLib; \
+	cd "$(OF_ROOT)/addons/ofxAndroid/ofAndroidLib"; \
 	echo installing on $(HOST_PLATFORM); \
 	if [ "$(HOST_PLATFORM)" = "windows" ]; then \
 	cmd //c $(SDK_ROOT)/tools/android.bat update project --target $(SDK_TARGET) --path .; \
 	else \
 	$(SDK_ROOT)/tools/android update project --target $(SDK_TARGET) --path .; \
 	fi 
-	cd $(PROJECT_PATH); \
+	cd "$(PROJECT_PATH)"; \
 	if [ -d "bin/data" ]; then \
 		mkdir -p res/raw; \
 		rm res/raw/$(RESNAME).zip; \

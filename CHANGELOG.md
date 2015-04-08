@@ -69,6 +69,9 @@ CORE
 	/ ofImage::saveImage() -> save()
 	+ ofBeginSaveScreenAsSVG
 
+### sound
+	/ ofFmodSoundPlayer: fix for file handles not being closed
+
 ### utils
 	/ better timming in fps calculation
 	+ ofFpsCounter allows to easily meassure the fps of any element
@@ -85,6 +88,7 @@ CORE
 	/ gstreamer: faster reload by default and optional asynchronous load
 	/ ofVideoPlayer::loadMovie() -> load()
 	/ ofVideoGrabber::initGrabber() -> setup()
+
 
 PLATFORM SPECIFIC
 -----------------
@@ -109,10 +113,20 @@ PLATFORM SPECIFIC
 ### windows
 	+ activated high precission timming to fix inaccurate fps calculations
 
+### osx
+	/ moved system framework dependencies from Xcode project to CoreOF.xcconfig
+	/ removed GLUT from project template, see libs/glut/lib/osx if you need GLUT
+
 CORE ADDONS
 -----------
 ### ofxOpenCV
 	/ updated ofxCvHaarFinder to not use textures on internal image objects, allowing for usage within threads.
+
+### ofxSynth
+    - Removed, see ofxMaxim for a replacement (https://github.com/micknoise/Maximilian)
+
+### ofxKinect
+    / Bugfix for kinects not keeping their IDs when using multiple kinects. 
 
 OF 0.8.4
 ========
