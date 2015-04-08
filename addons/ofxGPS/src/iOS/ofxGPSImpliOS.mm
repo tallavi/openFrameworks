@@ -278,6 +278,11 @@ void ofxGPS::stopLocation()
     
     ofNotifyEvent(ofxGPS::gpsDataChangedEvent, gpsData);
 }
+
+- (BOOL)locationManagerShouldDisplayHeadingCalibration:(CLLocationManager *)manager {
+    return YES;
+}
+
 #endif
 
 //--------------------------------------------------------------
