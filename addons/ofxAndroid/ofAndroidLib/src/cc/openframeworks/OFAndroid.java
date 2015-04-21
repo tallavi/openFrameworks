@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -130,24 +131,18 @@ public class OFAndroid {
 		return dataPath;
 	}
 	
-	Thread resourcesExtractorThread;
+	static Thread resourcesExtractorThread;
 	Thread appInitThread;
 	
-	public OFAndroid(String appPackageName, OFActivity activity){
-		Log.i("OF","OFAndroid init...");
-		OFAndroid.ofActivity = activity;
-		ofActivity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
-		//Log.i("OF","external files dir: "+ ofActivity.getApplicationContext().getExternalFilesDir(null));
-		OFAndroid.packageName = appPackageName;
-		OFAndroidObject.setActivity(ofActivity);
-		instance = this;
-		//unpackingDone = false;
-		
-		if(unpackingDone){
-			initView();
+	private static boolean appInitFlag = false;
+	
+	public static void appInit(final Activity activity)
+	{
+		if(appInitFlag)
 			return;
-		}
+		appInitFlag = true;
 		
+		OFAndroid.packageName = activity.getPackageName();
 		
 		resourcesExtractorThread = new Thread(new Runnable(){
 			@Override
@@ -165,10 +160,10 @@ public class OFAndroid {
 		        	// to a folder in the sdcard
 			        files = raw.getDeclaredFields(); 
 		
-			        SharedPreferences preferences = ofActivity.getPreferences(Context.MODE_PRIVATE);
+			        SharedPreferences preferences = activity.getPreferences(Context.MODE_PRIVATE);
 			        long lastInstalled = preferences.getLong("installed", 0);
 			        
-			        PackageManager pm = ofActivity.getPackageManager();
+			        PackageManager pm = activity.getPackageManager();
 
 					ApplicationInfo appInfo = pm.getApplicationInfo(packageName, 0);
 
@@ -186,19 +181,19 @@ public class OFAndroid {
 		        } 
 	        	
 		        
-		        ofActivity.onLoadPercent(.05f);
+		        reportPrecentage(.05f);
 	
 		        dataPath="";
 	    		try{
 	    			Log.i("OF", "sd mounted: " + checkSDCardMounted());
-					dataPath = getRealExternalStorageDirectory(ofActivity);
+					dataPath = getRealExternalStorageDirectory(activity);
 
 	    			Log.i("OF","creating app directory: " + dataPath);
 					try{
 						File dir = new File(dataPath);
 						if(!(dir.mkdirs() || dir.isDirectory())){
 							if(copydata){
-								fatalErrorDialog("Error while copying resources to sdcard:\nCouldn't create directory " + dataPath);
+								fatalErrorDialog(activity, "Error while copying resources to sdcard:\nCouldn't create directory " + dataPath);
 								Log.e("OF","error creating dir " + dataPath);
 								return;
 							}else{
@@ -206,12 +201,12 @@ public class OFAndroid {
 							}
 						}
 					}catch(Exception e){
-						fatalErrorDialog("Error while copying resources to sdcard:\nCouldn't create directory " + dataPath + "\n"+e.getMessage());
+						fatalErrorDialog(activity, "Error while copying resources to sdcard:\nCouldn't create directory " + dataPath + "\n"+e.getMessage());
 						Log.e("OF","error creating dir " + dataPath,e);
 					}
 					moveOldData(getOldExternalStorageDirectory(packageName), dataPath);
 					OFAndroid.setAppDataDir(dataPath);
-			        ofActivity.onLoadPercent(.10f);
+			        reportPrecentage(.10f);
 	    		}catch(Exception e){
 	    			Log.e("OF","couldn't move app resources to data directory " + dataPath,e);
 	    		}
@@ -220,7 +215,7 @@ public class OFAndroid {
 	    		String app_name="";
 				try {
 					int app_name_id = Class.forName(packageName+".R$string").getField("app_name").getInt(null);
-					app_name = ofActivity.getResources().getText(app_name_id).toString().toLowerCase(Locale.US);
+					app_name = activity.getResources().getText(app_name_id).toString().toLowerCase(Locale.US);
 					Log.i("OF","app name: " + app_name);
 					
 					if(copydata){
@@ -235,12 +230,12 @@ public class OFAndroid {
 		    				FileOutputStream to=null;
 		    	        	try {
 		    					fileId = files[i].getInt(null);
-		    					String resName = ofActivity.getResources().getText(fileId).toString();
+		    					String resName = activity.getResources().getText(fileId).toString();
 		    					fileName = resName.substring(resName.lastIndexOf("/"));
 		    					Log.i("OF","checking " + fileName);
 		    					if(fileName.equals("/" + app_name + "resources.zip")){
 		    						
-			    					from = ofActivity.getResources().openRawResource(fileId);
+			    					from = activity.getResources().openRawResource(fileId);
 									try{
 										ZipInputStream resourceszip = new ZipInputStream(from);
 										int totalZipSize = 0;
@@ -253,9 +248,9 @@ public class OFAndroid {
 										Log.i("OF","size of uncompressed resources: " + totalZipSize + " avaliable space:" + sdAvailSize);
 										if(totalZipSize>=sdAvailSize){
 											final int mbsize = totalZipSize/1024/1024;
-											fatalErrorDialog("Error while copying resources to sdcard:\nNot enough space available.("+mbsize+"Mb)\nMake more space by deleting some file in your sdcard");
+											fatalErrorDialog(activity, "Error while copying resources to sdcard:\nNot enough space available.("+mbsize+"Mb)\nMake more space by deleting some file in your sdcard");
 										}else{
-											from = ofActivity.getResources().openRawResource(fileId);
+											from = activity.getResources().openRawResource(fileId);
 											resourceszip = new ZipInputStream(from);
 											
 
@@ -271,14 +266,14 @@ public class OFAndroid {
 										        	OFZipUtil.mkdirs(outdir,dir);
 	
 										        OFZipUtil.extractFile(resourceszip, outdir, name);
-										        ofActivity.onLoadPercent((float)(.10+i*.01));
+										        reportPrecentage((float)(.10+i*.01));
 											}
 
 											resourceszip.close();
-									        ofActivity.onLoadPercent(.80f);
+									        reportPrecentage(.80f);
 										}
 									}catch(Exception e){
-										fatalErrorDialog("Error while copying resources to sdcard:\nCheck that you have enough space available.\n");
+										fatalErrorDialog(activity, "Error while copying resources to sdcard:\nCheck that you have enough space available.\n");
 									}
 		    					}
 		    	        	}catch (Exception e) {
@@ -296,40 +291,63 @@ public class OFAndroid {
 		    				}
 						}
 					}else{
-				        ofActivity.onLoadPercent(.80f);
+				        reportPrecentage(.80f);
 					}
 				} catch (Exception e) {
 					Log.e("OF","error retrieving app name",e);
 				} 	
-
+				OFAndroid.init();
 			}
 		});
-
+		
+		resourcesExtractorThread.start();
+	}
+	
+	private static void reportPrecentage(float precent)
+	{
+		if(ofActivity != null)
+			ofActivity.onLoadPercent(precent);
+	}
+	
+	public OFAndroid(String appPackageName, OFActivity activity){
+		Log.i("OF","OFAndroid init...");
+		OFAndroid.ofActivity = activity;
+		ofActivity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
+		//Log.i("OF","external files dir: "+ ofActivity.getApplicationContext().getExternalFilesDir(null));
+		OFAndroid.packageName = appPackageName;
+		OFAndroidObject.setActivity(ofActivity);
+		instance = this;
+		//unpackingDone = false;
+		
+		//if(unpackingDone){
+//			initView();
+		//	return;
+		//}
+			
+		OFAndroid.appInit(activity);
     	appInitThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				OFAndroid.init();
+//				OFAndroid.init();
+				OFAndroid.onCreate();
 				OFAndroid.onUnpackingResourcesDone();
-				
 			}
 		});
-
-    	resourcesExtractorThread.start();
     	appInitThread.start();
 		
     }
 	
-	private void fatalErrorDialog(final String msg){
-		ofActivity.runOnUiThread(new Runnable(){
+	private static void fatalErrorDialog(final Activity activity, final String msg){
+		activity.runOnUiThread(new Runnable(){
 			public void run() {
-				new AlertDialog.Builder(ofActivity)  
+				new AlertDialog.Builder(activity)  
 					.setMessage(msg)  
 					.setTitle("")  
 					.setCancelable(false)  
 					.setNeutralButton(android.R.string.ok,  
 							new DialogInterface.OnClickListener() {  
 						public void onClick(DialogInterface dialog, int whichButton){
-							ofActivity.finish();
+							activity.finish();
 						}
 	
 				  	})  
@@ -437,7 +455,8 @@ public class OFAndroid {
 	
 	static public void onUnpackingResourcesDone(){
 		unpackingDone = true;
-        ofActivity.onUnpackingResourcesDone();
+		if(ofActivity != null)
+			ofActivity.onUnpackingResourcesDone();
 	}
 	
 	static public boolean menuItemSelected(int id){
@@ -632,6 +651,7 @@ public class OFAndroid {
 	// native methods to call OF c++ callbacks
     public static native void setAppDataDir(String data_dir);
     public static native void init();
+    public static native void onCreate();
     public static native void onRestart();
     public static native void onPause();
     public static native void onResume();
@@ -1029,6 +1049,11 @@ public class OFAndroid {
         return mGLView;
 	}
 	
+	public static void setGLContentView(OFGLSurfaceView GLView)
+	{
+		mGLView = GLView;
+	}
+	
 	public static void disableTouchEvents(){
 		if(mGLView!=null){
 	        mGLView.setOnClickListener(null); 
@@ -1038,25 +1063,10 @@ public class OFAndroid {
 	
 	public static void enableTouchEvents(){
 		if(mGLView!=null){
+			if(gestureListener == null)
+				gestureListener = new OFGestureListener(ofActivity);
 	        mGLView.setOnClickListener(gestureListener); 
 	        mGLView.setOnTouchListener(gestureListener.touchListener);
-		}
-	}
-	
-	public static void initView(){        
-        try {
-        	Log.v("OF","trying to find class: "+packageName+".R$layout");
-			Class<?> layout = Class.forName(packageName+".R$layout");
-			View view = ofActivity.getLayoutInflater().inflate(layout.getField("main_layout").getInt(null),null);
-			ofActivity.setContentView(view);
-			
-			Class<?> id = Class.forName(packageName+".R$id");
-			mGLView = (OFGLSurfaceView)ofActivity.findViewById(id.getField("of_gl_surface").getInt(null));
-			
-		} catch (Exception e) {
-			Log.e("OF", "couldn't create view from layout falling back to GL only",e);
-	        mGLView = new OFGLSurfaceView(ofActivity);
-	        ofActivity.setContentView(mGLView);
 		}
 	}
 	
@@ -1066,9 +1076,9 @@ public class OFAndroid {
 			
 			@Override
 			public void run() {
-				gestureListener = new OFGestureListener(ofActivity);
+//				gestureListener = new OFGestureListener(ofActivity);
 		        OFEGLConfigChooser.setGLESVersion(finalversion);
-		        initView();
+//		        initView();
 		        instance.resume();
 				
 			}

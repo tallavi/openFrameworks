@@ -110,6 +110,8 @@ public:
 	ofEvent<bool> networkConnected;
 	ofEvent<void> pause;
 	ofEvent<void> resume;
+	ofEvent<void> create;
+	ofEvent<void> destroy;
 	ofEvent<void> unloadGL;
 	ofEvent<void> reloadGL;
 	ofEvent<ofxAndroidSwipeEventArgs> swipe;

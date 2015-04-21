@@ -103,11 +103,12 @@ ofAppAndroidWindow::ofAppAndroidWindow()
 :currentRenderer(new ofGLRenderer(this))
 ,glesVersion(1){
 	window = this;
-
+	ofLogError("ofAppAndroidWindow") << "Constructor";
 }
 
 ofAppAndroidWindow::~ofAppAndroidWindow() {
 	// TODO Auto-generated destructor stub
+	ofLogError("ofAppAndroidWindow") << "Destructor";
 }
 
 void ofAppAndroidWindow::setup(const ofGLESWindowSettings & settings){
@@ -255,6 +256,14 @@ Java_cc_openframeworks_OFAndroid_setAppDataDir( JNIEnv*  env, jobject  thiz, jst
     ofSetDataPathRoot(string(mfile)+"/");
 }
 
+void Java_cc_openframeworks_OFAndroid_onCreate( JNIEnv*  env, jclass  clazz)
+{
+	ofLogVerbose("OFAndroid")<<"OFAndroid_onCreate"<<std::endl;
+	ofEvent<void>& temp = ofxAndroidEvents().create;
+	ofLogVerbose("OFAndroid")<<"create: "<<&temp<<std::endl;
+	ofNotifyEvent(temp);
+}
+
 void
 Java_cc_openframeworks_OFAndroid_onRestart( JNIEnv*  env, jobject  thiz ){
 
@@ -283,7 +292,9 @@ Java_cc_openframeworks_OFAndroid_onStop( JNIEnv*  env, jobject  thiz ){
 
 void
 Java_cc_openframeworks_OFAndroid_onDestroy( JNIEnv*  env, jclass  thiz ){
-	ofExitCallback();
+//	ofExitCallback();
+	ofLogVerbose("OFAndroid")<<"OFAndroid_onDestroy"<<std::endl;
+	ofNotifyEvent(ofxAndroidEvents().destroy);
 }
 
 void
@@ -306,10 +317,20 @@ Java_cc_openframeworks_OFAndroid_onSurfaceCreated( JNIEnv*  env, jclass  thiz ){
 		ofPopStyle();
 		surfaceDestroyed = false;
 	}else{
-	    if(window->renderer()->getType()==ofGLProgrammableRenderer::TYPE){
+		ofLogNotice("ofAppAndroidWindow") << "onSurfaceCreated1";
+		if(window == nullptr)
+			ofLogNotice("ofAppAndroidWindow") << "onSurfaceCreated null";
+	    if(window->renderer()->getType()==ofGLProgrammableRenderer::TYPE)
+	    {
+	    	ofLogNotice("ofAppAndroidWindow") << "onSurfaceCreated2";
 	    	static_cast<ofGLProgrammableRenderer*>(window->renderer().get())->setup(2,0);
-	    }else{
+	    	ofLogNotice("ofAppAndroidWindow") << "onSurfaceCreated3";
+	    }
+	    else
+	    {
+	    	ofLogNotice("ofAppAndroidWindow") << "onSurfaceCreated4";
 	    	static_cast<ofGLRenderer*>(window->renderer().get())->setup();
+	    	ofLogNotice("ofAppAndroidWindow") << "onSurfaceCreated5";
 	    }
 	    ofLogNotice() << "renderer created";
 	}
@@ -340,6 +361,7 @@ void
 Java_cc_openframeworks_OFAndroid_exit( JNIEnv*  env, jclass  thiz )
 {
 	window->events().notifyExit();
+	ofExitCallback();
 }
 
 /* Call to render the next GL frame */

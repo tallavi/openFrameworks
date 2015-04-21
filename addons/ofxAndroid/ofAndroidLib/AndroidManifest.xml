@@ -3,5 +3,5 @@
     package="cc.openframeworks.cc">
     <uses-sdk
         android:minSdkVersion="8"
-        android:targetSdkVersion="20" />
+        android:targetSdkVersion="21" />
 </manifest>
