@@ -400,6 +400,12 @@ public class OFAndroid {
 		if(mGLView==null || resumed) return;
 		resumed = true;
 		Log.i("OF","onResume");
+		try {
+			appInitThread.join();
+		} catch (InterruptedException ex) {
+			// TODO Auto-generated catch block
+			Log.e("OF", "failed join appInitThread message: "+ex.getMessage(), ex);
+		}
 		enableTouchEvents();
 		mGLView.onResume();
 		synchronized (OFAndroidObject.ofObjects) {
