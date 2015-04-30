@@ -24,8 +24,8 @@
 bool ofxGPS::m_locationStarted = false;
 bool ofxGPS::m_headingStarted= false;
 
-ofEvent<const ofxGPS::Data> ofxGPS::gpsDataChangedEvent;
-
+ofEvent<const ofxGPS::LocationData> ofxGPS::newLocationDataEvent;
+ofEvent<const ofxGPS::HeadingData> ofxGPS::newHeadingDataEvent;
 
 ofxGPSImpliOSCoreLocationDelegate* coreLoc = NULL;
 
@@ -53,11 +53,6 @@ void releaseCoreLocIfNeeded() {
         [coreLoc release];
         isMonitoring= false;
     }
-}
-
-ofxGPS::Data ofxGPS::getGPSData()
-{
-    return [getCoreLocSafe() gpsData];
 }
 
 //--------------------------------------------------------------
@@ -114,7 +109,7 @@ void ofxGPS::stopLocation()
 
 //--------------------------------------------------------------
 //create getter/setter functions for these variables
-@synthesize lat, lng, hAccuracy, alt, vAccuracy, distMoved, x, y, z, magneticHeading, trueHeading, headingAccuracy, gpsData;
+@synthesize lat, lng, hAccuracy, alt, vAccuracy, distMoved, x, y, z, magneticHeading, trueHeading, headingAccuracy;
 
 //--------------------------------------------------------------
 - (id) init
@@ -129,17 +124,12 @@ void ofxGPS::stopLocation()
 		vAccuracy = 0;
 		distMoved = 0;
 		
-		
 		x = 0;
 		y = 0;
 		z = 0;
 		magneticHeading = 0;
 		trueHeading = 0;
 		headingAccuracy = 0;
-        
-        gpsData.hasLocation = false;
-        gpsData.hasAltitude = false;
-        gpsData.hasHeading = false;
 		
 		locationManager = [[CLLocationManager alloc] init];
 		locationManager.delegate = self;
@@ -221,12 +211,12 @@ void ofxGPS::stopLocation()
 	didUpdateToLocation:(CLLocation *)newLocation
 		   fromLocation:(CLLocation *)oldLocation
 {
-    gpsData.time = Poco::Timestamp();
+    ofxGPS::LocationData locationData;
     
 	if (signbit(newLocation.horizontalAccuracy)) {
 		// Negative accuracy means an invalid or unavailable measurement
 		NSLog(@"LatLongUnavailable");
-        gpsData.hasLocation = false;
+        locationData.hasLocation = false;
 	} else {
 		lat = newLocation.coordinate.latitude;
 		lng = newLocation.coordinate.longitude;
@@ -237,26 +227,26 @@ void ofxGPS::stopLocation()
 			distMoved = distanceMoved;
 		}
         
-        gpsData.hasLocation = true;
-        gpsData.latitude = lat;
-        gpsData.longitude = lng;
-        gpsData.locationAccuracy = hAccuracy;
+        locationData.hasLocation = true;
+        locationData.latitude = lat;
+        locationData.longitude = lng;
+        locationData.locationAccuracy = hAccuracy;
 	}
 
 	if (signbit(newLocation.verticalAccuracy)) {
 		// Negative accuracy means an invalid or unavailable measurement
 		NSLog(@"AltUnavailable");
-        gpsData.hasHeading = false;
+        locationData.hasAltitude = false;
 	} else {
 		vAccuracy = newLocation.verticalAccuracy;
 		alt = newLocation.altitude;
         
-        gpsData.hasAltitude = true;
-        gpsData.altitude = alt;
-        gpsData.headingAccuracy = vAccuracy;
+        locationData.hasAltitude = true;
+        locationData.altitude = alt;
+        locationData.altitudeAccuracy = vAccuracy;
 	}
-	
-    ofNotifyEvent(ofxGPS::gpsDataChangedEvent, gpsData);
+    
+    ofNotifyEvent(ofxGPS::newLocationDataEvent, locationData);
 }
 
 //--------------------------------------------------------------
@@ -265,7 +255,9 @@ void ofxGPS::stopLocation()
 //called when the heading is updated
 - (void)locationManager:(CLLocationManager *)manager didUpdateHeading:(CLHeading *)newHeading
 {
-    gpsData.hasHeading = true;
+    ofxGPS::HeadingData headingData;
+    
+    headingData.hasHeading = true;
 	x = newHeading.x;
 	y = newHeading.y;
 	z = newHeading.z;
@@ -273,10 +265,10 @@ void ofxGPS::stopLocation()
 	trueHeading = newHeading.trueHeading;
 	headingAccuracy = newHeading.headingAccuracy;
     
-    gpsData.heading = 360.0 - trueHeading;
-    gpsData.headingAccuracy = headingAccuracy;
+    headingData.heading = 360.0 - trueHeading;
+    headingData.headingAccuracy = headingAccuracy;
     
-    ofNotifyEvent(ofxGPS::gpsDataChangedEvent, gpsData);
+    ofNotifyEvent(ofxGPS::newHeadingDataEvent, headingData);
 }
 
 //- (BOOL)locationManagerShouldDisplayHeadingCalibration:(CLLocationManager *)manager {

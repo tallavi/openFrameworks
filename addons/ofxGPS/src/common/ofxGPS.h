@@ -19,7 +19,7 @@ private:
     
 public:
     
-    struct Data
+    struct LocationData
     {
         bool hasLocation;
         double longitude;
@@ -29,12 +29,13 @@ public:
         bool hasAltitude;
         double altitude;
         double altitudeAccuracy;
-        
+    };
+    
+    struct HeadingData
+    {
         bool hasHeading;
         double heading;
         double headingAccuracy;
-        
-        Poco::Timestamp time;
     };
     
     static bool locationStarted(){return m_locationStarted;}
@@ -46,9 +47,8 @@ public:
     static void stopLocation();
     static void stopHeading();
     
-    static ofxGPS::Data getGPSData();
-    
-    static ofEvent<const ofxGPS::Data> gpsDataChangedEvent;
+    static ofEvent<const ofxGPS::LocationData> newLocationDataEvent;
+    static ofEvent<const ofxGPS::HeadingData> newHeadingDataEvent;
 };
 
 
