@@ -49,7 +49,6 @@
 @property (nonatomic, readonly) double magneticHeading;
 @property (nonatomic, readonly) double trueHeading;
 @property (nonatomic, readonly) double headingAccuracy;
-@property (nonatomic, readonly) ofxGPS::Data gpsData;
 
 - (id) init;
 - (void) dealloc;
