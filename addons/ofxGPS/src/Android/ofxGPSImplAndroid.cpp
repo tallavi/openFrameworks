@@ -12,15 +12,12 @@
 bool ofxGPS::m_locationStarted;
 bool ofxGPS::m_headingStarted;
 
-ofEvent<const ofxGPS::Data> ofxGPS::gpsDataChangedEvent;
+ofEvent<const ofxGPS::LocationData> ofxGPS::newLocationDataEvent;
+ofEvent<const ofxGPS::HeadingData> ofxGPS::newHeadingDataEvent;
 
 bool isInitialized = false;
 
 jobject OFAndroidGPS;
-
-ofxGPS::Data gpsData;
-
-Poco::Mutex mutex;
 
 jobject& getJavaInstanceSafe()
 {
@@ -28,41 +25,6 @@ jobject& getJavaInstanceSafe()
 		OFAndroidGPS = ofxJavaCallStaticObjectMethod("cc/openframeworks/OFAndroidGPS", "getInstance", "()Lcc/openframeworks/OFAndroidGPS;");
 
 	return OFAndroidGPS;
-}
-
-ofxGPS::Data ofxGPS::getGPSData()
-{
-	Poco::Mutex::ScopedLock lock(mutex);
-
-	return gpsData;
-}
-
-void updateGPSData(ofxGPS::Data& newGpsData)
-{
-
-	Poco::Mutex::ScopedLock lock(mutex);
-
-	gpsData.hasLocation = newGpsData.hasLocation;
-	gpsData.longitude = newGpsData.longitude;
-	gpsData.latitude = newGpsData.latitude;
-	gpsData.locationAccuracy = newGpsData.locationAccuracy;
-	gpsData.hasAltitude = newGpsData.hasAltitude;
-	gpsData.altitude = newGpsData.altitude;
-	gpsData.altitudeAccuracy = newGpsData.altitudeAccuracy;
-	gpsData.time = newGpsData.time;
-
-	ofNotifyEvent(ofxGPS::gpsDataChangedEvent, gpsData);
-}
-
-void updateCompassData(double heading)
-{
-
-	Poco::Mutex::ScopedLock lock(mutex);
-
-	gpsData.hasHeading = true;
-	gpsData.heading = heading;
-
-	ofNotifyEvent(ofxGPS::gpsDataChangedEvent, gpsData);
 }
 
 bool ofxGPS::startLocation(){
@@ -101,24 +63,26 @@ extern "C"{
 void
 Java_cc_openframeworks_OFAndroidGPS_locationChanged( JNIEnv*  env, jobject  thiz, jdouble altitude, jdouble latitude, jdouble longitude, jfloat speed, jfloat heading ){
 
-	ofxGPS::Data gpsData;
+	ofxGPS::LocationData locationData;
 
-	gpsData.time = Poco::Timestamp();
+	locationData.hasLocation = true;
+	locationData.longitude = longitude;
+	locationData.latitude = latitude;
 
-	gpsData.hasLocation = true;
-	gpsData.longitude = longitude;
-	gpsData.latitude = latitude;
+	locationData.hasAltitude = true;
+	locationData.altitude = altitude;
 
-	gpsData.hasAltitude = true;
-	gpsData.altitude = altitude;
-
-	updateGPSData(gpsData);
+	ofNotifyEvent(ofxGPS::newLocationDataEvent, locationData);
 }
 
 void
 Java_cc_openframeworks_OFAndroidGPS_headingChanged( JNIEnv*  env, jobject  thiz, jdouble heading ){
 
-	updateCompassData(heading);
+	ofxGPS::HeadingData headingData;
+	headingData.hasHeading = true;
+	headingData.heading = heading;
+
+	ofNotifyEvent(ofxGPS::newHeadingDataEvent, headingData);
 }
 
 }
