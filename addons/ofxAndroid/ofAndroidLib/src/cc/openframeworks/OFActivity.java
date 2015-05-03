@@ -1,12 +1,11 @@
 package cc.openframeworks;
 
 import android.os.Bundle;
-//import android.app.Activity;
-import android.support.v4.app.FragmentActivity;
+import android.app.Activity;
 import android.util.Log;
 import android.view.View;
 
-public abstract class OFActivity extends FragmentActivity {
+public abstract class OFActivity extends Activity {
 	public void onGLSurfaceCreated(){}
 	public void onLoadPercent(float percent){}
 	public void onUnpackingResourcesDone(){}

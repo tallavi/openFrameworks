@@ -131,8 +131,8 @@ public class OFAndroid {
 		return dataPath;
 	}
 	
-	static Thread resourcesExtractorThread;
-	Thread appInitThread;
+//	static Thread resourcesExtractorThread;
+//	Thread appInitThread;
 	
 	private static boolean appInitFlag = false;
 	
@@ -144,9 +144,9 @@ public class OFAndroid {
 		
 		OFAndroid.packageName = activity.getPackageName();
 		
-		resourcesExtractorThread = new Thread(new Runnable(){
-			@Override
-			public void run() {
+//		resourcesExtractorThread = new Thread(new Runnable(){
+//			@Override
+//			public void run() {
 				Log.i("OF","starting resources extractor");
 				Class<?> raw = null;
 		        boolean copydata = false;
@@ -297,10 +297,10 @@ public class OFAndroid {
 					Log.e("OF","error retrieving app name",e);
 				} 	
 				OFAndroid.init();
-			}
-		});
+//			}
+//		});
 		
-		resourcesExtractorThread.start();
+//		resourcesExtractorThread.start();
 	}
 	
 	private static void reportPrecentage(float precent)
@@ -324,18 +324,24 @@ public class OFAndroid {
 		//	return;
 		//}
 			
-		OFAndroid.appInit(activity);
-    	appInitThread = new Thread(new Runnable() {
-			@Override
-			public void run() {
-//				OFAndroid.init();
-				OFAndroid.onCreate();
-				OFAndroid.onUnpackingResourcesDone();
-			}
-		});
-    	appInitThread.start();
-		
+//		OFAndroid.appInit(activity);
+//    	appInitThread = new Thread(new Runnable() {
+//			@Override
+//			public void run() {
+////				OFAndroid.init();
+//				OFAndroid.onCreate();
+//				OFAndroid.onUnpackingResourcesDone();
+//			}
+//		});
+//    	appInitThread.start();
+//		
     }
+	
+	public static void onCreateJava()
+	{
+		OFAndroid.onCreate();
+		OFAndroid.onUnpackingResourcesDone();
+	}
 	
 	private static void fatalErrorDialog(final Activity activity, final String msg){
 		activity.runOnUiThread(new Runnable(){
@@ -398,14 +404,14 @@ public class OFAndroid {
 	
 	public void resume(){
 		if(mGLView==null || resumed) return;
-		resumed = true;
 		Log.i("OF","onResume");
-		try {
-			appInitThread.join();
-		} catch (InterruptedException ex) {
-			// TODO Auto-generated catch block
-			Log.e("OF", "failed join appInitThread message: "+ex.getMessage(), ex);
-		}
+//		try {
+//			appInitThread.join();
+//		} catch (InterruptedException ex) {
+//			// TODO Auto-generated catch block
+//			Log.e("OF", "failed join appInitThread message: "+ex.getMessage(), ex);
+//		}
+		resumed = true;
 		enableTouchEvents();
 		mGLView.onResume();
 		synchronized (OFAndroidObject.ofObjects) {
@@ -1085,18 +1091,18 @@ public class OFAndroid {
 //				gestureListener = new OFGestureListener(ofActivity);
 		        OFEGLConfigChooser.setGLESVersion(finalversion);
 //		        initView();
-		        instance.resume();
+//		        instance.resume();
 				
 			}
 		});
         
-        try {
-        	Log.i("OF","joining");
-			instance.resourcesExtractorThread.join();
-			Log.i("OF","joined");
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+//        try {
+//        	Log.i("OF","joining");
+//			instance.resourcesExtractorThread.join();
+//			Log.i("OF","joined");
+//		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//		}
         
 	}
 	
