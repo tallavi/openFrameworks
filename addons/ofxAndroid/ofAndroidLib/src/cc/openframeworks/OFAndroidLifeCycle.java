@@ -143,6 +143,7 @@ public class OFAndroidLifeCycle
 			public void run() 
 			{
 				// TODO Auto-generated method stub
+				Runnable callbackFunction = null;
 				while(!M_STATES_STACK.isEmpty())
 				{
 					State next = M_STATES_STACK.firstElement();
@@ -153,33 +154,69 @@ public class OFAndroidLifeCycle
 					M_CURRENT_STATE = next;
 					switch (next) {
 					case init:
-						OFAndroid.appInit(M_ACTIVITY);
-						M_CALLBACK.callbackInit();
+						OFAndroidLifeCycleHelper.appInit(M_ACTIVITY);
+						callbackFunction = new Runnable() {
+							
+							@Override
+							public void run() {
+								// TODO Auto-generated method stub
+								M_CALLBACK.callbackInit();
+							}
+						};
 						break;
 					case create:
-						OFAndroid.onCreateJava();
-						M_CALLBACK.callbackCreated();
+						OFAndroidLifeCycleHelper.onCreate();
+						callbackFunction = new Runnable() {
+							
+							@Override
+							public void run() {
+								// TODO Auto-generated method stub
+								M_CALLBACK.callbackCreated();
+							}
+						};
 						break;
 					case resume:
-						OFAndroid.onResume();
-						M_CALLBACK.callbackResumed();
+						OFAndroidLifeCycleHelper.onResume();
+						callbackFunction = new Runnable() {
+							
+							@Override
+							public void run() {
+								// TODO Auto-generated method stub
+								M_CALLBACK.callbackResumed();
+							}
+						};
 						break;
 					case pause:
-						OFAndroid.onPause();
-						M_CALLBACK.callbackPaused();
+						OFAndroidLifeCycleHelper.onPause();
+						callbackFunction = new Runnable() {
+							
+							@Override
+							public void run() {
+								// TODO Auto-generated method stub
+								M_CALLBACK.callbackPaused();
+							}
+						};
 						break;
 					case destroy:
-						OFAndroid.onDestroy();
-						M_CALLBACK.callbackDestroed();
+						OFAndroidLifeCycleHelper.onDestroy();
+						callbackFunction = new Runnable() {
+							
+							@Override
+							public void run() {
+								// TODO Auto-generated method stub
+								M_CALLBACK.callbackDestroed();
+							}
+						};
 						break;
 					case exit:
-						OFAndroid.exit();
+						OFAndroidLifeCycleHelper.exit();
 						break;
 
 					default:
 						break;
 					}
 				}
+				M_ACTIVITY.runOnUiThread(callbackFunction);
 				synchronized (M_IS_WORKER_DONE) {
 					M_IS_WORKER_DONE.set(true);
 				}
@@ -201,8 +238,10 @@ public class OFAndroidLifeCycle
 		pushState(State.init);
 	}
 	
-	public static void onCreate()
+	public static void onCreate(OFActivity activity)
 	{
+		OFAndroidLifeCycle.M_ACTIVITY = activity;
+		OFAndroidLifeCycle.M_CALLBACK = activity;
 		pushState(State.create);
 	}
 	

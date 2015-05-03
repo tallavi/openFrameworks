@@ -1,16 +1,10 @@
 package cc.openframeworks;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -20,12 +14,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.content.pm.ActivityInfo;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
@@ -34,11 +23,9 @@ import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.MulticastLock;
 import android.os.Environment;
-import android.os.StatFs;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.SurfaceView;
-import android.view.View;
 import android.view.WindowManager.LayoutParams;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
@@ -131,219 +118,35 @@ public class OFAndroid {
 		return dataPath;
 	}
 	
-//	static Thread resourcesExtractorThread;
-//	Thread appInitThread;
-	
-	private static boolean appInitFlag = false;
-	
-	public static void appInit(final Activity activity)
+	public static void initAppDataDirectory(Activity activity)
 	{
-		if(appInitFlag)
-			return;
-		appInitFlag = true;
-		
-		OFAndroid.packageName = activity.getPackageName();
-		
-//		resourcesExtractorThread = new Thread(new Runnable(){
-//			@Override
-//			public void run() {
-				Log.i("OF","starting resources extractor");
-				Class<?> raw = null;
-		        boolean copydata = false;
-		        Field[] files = null;
-		        try {
-		        	
-					// try to find if R.raw class exists will throw
-		        	// an exception if not
-		        	raw = Class.forName(packageName+".R$raw");
-		        	// if it exists copy all the raw resources
-		        	// to a folder in the sdcard
-			        files = raw.getDeclaredFields(); 
-		
-			        SharedPreferences preferences = activity.getPreferences(Context.MODE_PRIVATE);
-			        long lastInstalled = preferences.getLong("installed", 0);
-			        
-			        PackageManager pm = activity.getPackageManager();
-
-					ApplicationInfo appInfo = pm.getApplicationInfo(packageName, 0);
-
-			        String appFile = appInfo.sourceDir;
-			        long installed = new File(appFile).lastModified();
-			        if(installed>lastInstalled){
-			        	Editor editor = preferences.edit();
-			        	editor.putLong("installed", installed);
-			        	editor.commit();
-			        	copydata = true;
-			        }
-				} catch (NameNotFoundException e1) {
-					copydata = false;
-		        } catch (ClassNotFoundException e1) { 
-		        } 
-	        	
-		        
-		        reportPrecentage(.05f);
-	
-		        dataPath="";
-	    		try{
-	    			Log.i("OF", "sd mounted: " + checkSDCardMounted());
-					dataPath = getRealExternalStorageDirectory(activity);
-
-	    			Log.i("OF","creating app directory: " + dataPath);
-					try{
-						File dir = new File(dataPath);
-						if(!(dir.mkdirs() || dir.isDirectory())){
-							if(copydata){
-								fatalErrorDialog(activity, "Error while copying resources to sdcard:\nCouldn't create directory " + dataPath);
-								Log.e("OF","error creating dir " + dataPath);
-								return;
-							}else{
-								throw new Exception();
-							}
-						}
-					}catch(Exception e){
-						fatalErrorDialog(activity, "Error while copying resources to sdcard:\nCouldn't create directory " + dataPath + "\n"+e.getMessage());
-						Log.e("OF","error creating dir " + dataPath,e);
-					}
-					moveOldData(getOldExternalStorageDirectory(packageName), dataPath);
-					OFAndroid.setAppDataDir(dataPath);
-			        reportPrecentage(.10f);
-	    		}catch(Exception e){
-	    			Log.e("OF","couldn't move app resources to data directory " + dataPath,e);
-	    		}
-	    		
-	    		
-	    		String app_name="";
-				try {
-					int app_name_id = Class.forName(packageName+".R$string").getField("app_name").getInt(null);
-					app_name = activity.getResources().getText(app_name_id).toString().toLowerCase(Locale.US);
-					Log.i("OF","app name: " + app_name);
-					
-					if(copydata){
-						StatFs stat = new StatFs(dataPath);
-						double sdAvailSize = (double)stat.getAvailableBlocks()
-				                   * (double)stat.getBlockSize();
-						for(int i=0; i<files.length; i++){
-		    	        	int fileId;
-		    	        	String fileName="";
-		    				
-		    				InputStream from=null;
-		    				FileOutputStream to=null;
-		    	        	try {
-		    					fileId = files[i].getInt(null);
-		    					String resName = activity.getResources().getText(fileId).toString();
-		    					fileName = resName.substring(resName.lastIndexOf("/"));
-		    					Log.i("OF","checking " + fileName);
-		    					if(fileName.equals("/" + app_name + "resources.zip")){
-		    						
-			    					from = activity.getResources().openRawResource(fileId);
-									try{
-										ZipInputStream resourceszip = new ZipInputStream(from);
-										int totalZipSize = 0;
-										ZipEntry entry;
-										File outdir = new File(dataPath);
-										while ((entry = resourceszip.getNextEntry()) != null){
-											totalZipSize+=entry.getSize();
-										}
-										resourceszip.close();
-										Log.i("OF","size of uncompressed resources: " + totalZipSize + " avaliable space:" + sdAvailSize);
-										if(totalZipSize>=sdAvailSize){
-											final int mbsize = totalZipSize/1024/1024;
-											fatalErrorDialog(activity, "Error while copying resources to sdcard:\nNot enough space available.("+mbsize+"Mb)\nMake more space by deleting some file in your sdcard");
-										}else{
-											from = activity.getResources().openRawResource(fileId);
-											resourceszip = new ZipInputStream(from);
-											
-
-											while ((entry = resourceszip.getNextEntry()) != null){
-												String name = entry.getName();
-										        if( entry.isDirectory() )
-										        {
-										        	OFZipUtil.mkdirs(outdir,name);
-										          continue;
-										        }
-										        String dir = OFZipUtil.dirpart(name);
-										        if( dir != null )
-										        	OFZipUtil.mkdirs(outdir,dir);
-	
-										        OFZipUtil.extractFile(resourceszip, outdir, name);
-										        reportPrecentage((float)(.10+i*.01));
-											}
-
-											resourceszip.close();
-									        reportPrecentage(.80f);
-										}
-									}catch(Exception e){
-										fatalErrorDialog(activity, "Error while copying resources to sdcard:\nCheck that you have enough space available.\n");
-									}
-		    					}
-		    	        	}catch (Exception e) {
-		    					Log.e("OF","error copying file",e);
-		    				} finally {
-		    					if (from != null)
-		    					  try {
-		    					    from.close();
-		    					  } catch (IOException e) { }
-		    					  
-		    			        if (to != null)
-		    			          try {
-		    			            to.close();
-		    			          } catch (IOException e) { }
-		    				}
-						}
-					}else{
-				        reportPrecentage(.80f);
-					}
-				} catch (Exception e) {
-					Log.e("OF","error retrieving app name",e);
-				} 	
-				OFAndroid.init();
-//			}
-//		});
-		
-//		resourcesExtractorThread.start();
+		dataPath = getRealExternalStorageDirectory(activity);
 	}
 	
-	private static void reportPrecentage(float precent)
+
+	static void runOnMainThread(Runnable runnable)
+	{
+		ofActivity.runOnUiThread(runnable);
+	}
+	
+	
+	static void reportPrecentage(float precent)
 	{
 		if(ofActivity != null)
 			ofActivity.onLoadPercent(precent);
 	}
 	
-	public OFAndroid(String appPackageName, OFActivity activity){
+	static void initOFAndroid(String appPackageName, OFActivity activity)
+	{
 		Log.i("OF","OFAndroid init...");
 		OFAndroid.ofActivity = activity;
 		ofActivity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		//Log.i("OF","external files dir: "+ ofActivity.getApplicationContext().getExternalFilesDir(null));
 		OFAndroid.packageName = appPackageName;
 		OFAndroidObject.setActivity(ofActivity);
-		instance = this;
-		//unpackingDone = false;
-		
-		//if(unpackingDone){
-//			initView();
-		//	return;
-		//}
-			
-//		OFAndroid.appInit(activity);
-//    	appInitThread = new Thread(new Runnable() {
-//			@Override
-//			public void run() {
-////				OFAndroid.init();
-//				OFAndroid.onCreate();
-//				OFAndroid.onUnpackingResourcesDone();
-//			}
-//		});
-//    	appInitThread.start();
-//		
-    }
-	
-	public static void onCreateJava()
-	{
-		OFAndroid.onCreate();
-		OFAndroid.onUnpackingResourcesDone();
 	}
 	
-	private static void fatalErrorDialog(final Activity activity, final String msg){
+	static void fatalErrorDialog(final Activity activity, final String msg){
 		activity.runOnUiThread(new Runnable(){
 			public void run() {
 				new AlertDialog.Builder(activity)  
@@ -360,109 +163,6 @@ public class OFAndroid {
 				  	.show();
 			}  
 		});
-	}
-	
-	
-	public void start(){
-		Log.i("OF","onStart");
-		enableTouchEvents();
-	}
-	
-	public void restart(){
-		Log.i("OF","onRestart");
-		enableTouchEvents();
-		onRestart();
-        /*if(OFAndroidSoundStream.isInitialized() && OFAndroidSoundStream.wasStarted())
-        	OFAndroidSoundStream.getInstance().start();*/
-	}
-	
-	private boolean resumed;
-	
-	public void pause(){
-		Log.i("OF","onPause");
-		disableTouchEvents();
-		
-		onPause();
-
-		synchronized (OFAndroidObject.ofObjects) {
-			for(OFAndroidObject object : OFAndroidObject.ofObjects){
-				object.onPause();
-			}
-		}
-		if(mGLView!=null) mGLView.onPause();
-		if(networkStateReceiver!=null){
-			try{
-				ofActivity.unregisterReceiver(networkStateReceiver);
-			}catch(java.lang.IllegalArgumentException e){
-				
-			}
-		}
-
-		sleepLocked=false;
-		resumed = false;
-	}
-	
-	public void resume(){
-		if(mGLView==null || resumed) return;
-		Log.i("OF","onResume");
-//		try {
-//			appInitThread.join();
-//		} catch (InterruptedException ex) {
-//			// TODO Auto-generated catch block
-//			Log.e("OF", "failed join appInitThread message: "+ex.getMessage(), ex);
-//		}
-		resumed = true;
-		enableTouchEvents();
-		mGLView.onResume();
-		synchronized (OFAndroidObject.ofObjects) {
-			for(OFAndroidObject object : OFAndroidObject.ofObjects){
-				object.onResume();
-			}
-			
-		}
-		
-    	
-		
-        if(mGLView.isSetup()){
-        	Log.i("OF","resume view and native");
-        	onResume();
-        }
-        
-        if(OFAndroid.orientation!=-1) OFAndroid.setScreenOrientation(OFAndroid.orientation);
-		
-		if(networkStateReceiver!=null){
-			monitorNetworkState();
-		}
-		
-	}
-	
-	public void stop(){
-		resumed = false;
-		Log.i("OF","onStop");
-		disableTouchEvents();
-		onStop();
-		
-		synchronized (OFAndroidObject.ofObjects) {
-			for(OFAndroidObject object : OFAndroidObject.ofObjects){
-				object.onStop();
-			}
-		}
-		
-
-		if(networkStateReceiver!=null){
-			try{
-				ofActivity.unregisterReceiver(networkStateReceiver);
-			}catch(java.lang.IllegalArgumentException e){
-				
-			}
-		}
-		
-		sleepLocked=false;
-	}
-	
-	public void destroy(){
-		Log.i("OF","onDestroy");
-		onDestroy();
 	}
 	
 	static public void onUnpackingResourcesDone(){
@@ -578,6 +278,24 @@ public class OFAndroid {
 	}
 
 	static private BroadcastReceiver networkStateReceiver;
+	
+	public static void registerNetworkStateReceiver()
+	{
+		if(OFAndroid.networkStateReceiver!=null){
+			OFAndroid.monitorNetworkState();
+		}
+	}
+	
+	public static void unregisterNetworkStateReceiver()
+	{
+		if(OFAndroid.networkStateReceiver!=null){
+			try{
+				OFAndroid.ofActivity.unregisterReceiver(OFAndroid.networkStateReceiver);
+			}catch(java.lang.IllegalArgumentException e){
+				
+			}
+		}
+	}
 
 	static public void monitorNetworkState(){
 		networkStateReceiver = new BroadcastReceiver() {
@@ -718,6 +436,10 @@ public class OFAndroid {
     	//ofActivity.getWindow().setAttributes(attrs);
     }
     
+    public static int getOrientation()
+    {
+    	return orientation;
+    }
     
     private static int orientation=-1;
     public static void setScreenOrientation(int orientation){
@@ -1022,18 +744,24 @@ public class OFAndroid {
 	}
 	
 	public static boolean isApplicationSetup(){
-		return mGLView!=null && mGLView.isSetup();
+		OFGLSurfaceView glView = OFAndroid.getGLView();
+		return glView!=null && glView.isSetup();
 	}
     
-    private static OFGLSurfaceView mGLView;
+//    private static OFGLSurfaceView glView;
     private static OFAndroidAccelerometer accelerometer;
     private static OFAndroidGPS gps;
     private static OFActivity ofActivity;
-    private static OFAndroid instance;
+//    private static OFAndroid instance;
     private static OFGestureListener gestureListener;
-	private static String packageName;
+	static String packageName;
 	private static String dataPath;
 	public static boolean unpackingDone;
+	
+	static OFGLSurfaceView getGLView()
+	{
+		return ofActivity.getGLContentView();
+	}
 
     public static native boolean hasNeon();
 	 
@@ -1057,53 +785,45 @@ public class OFAndroid {
 
 
 
-	public static SurfaceView getGLContentView() {
-        return mGLView;
-	}
+//	public static SurfaceView getGLContentView() {
+//        return mGLView;
+//	}
 	
-	public static void setGLContentView(OFGLSurfaceView GLView)
-	{
-		mGLView = GLView;
-	}
+//	public static void setGLContentView(OFGLSurfaceView GLView)
+//	{
+//		mGLView = GLView;
+//	}
 	
 	public static void disableTouchEvents(){
-		if(mGLView!=null){
-	        mGLView.setOnClickListener(null); 
-	        mGLView.setOnTouchListener(null);
+		OFGLSurfaceView glView = OFAndroid.getGLView();
+		if(glView!=null){
+	        glView.setOnClickListener(null); 
+	        glView.setOnTouchListener(null);
 		}
 	}
 	
 	public static void enableTouchEvents(){
-		if(mGLView!=null){
+		OFGLSurfaceView glView = OFAndroid.getGLView();
+		if(glView!=null){
 			if(gestureListener == null)
 				gestureListener = new OFGestureListener(ofActivity);
-	        mGLView.setOnClickListener(gestureListener); 
-	        mGLView.setOnTouchListener(gestureListener.touchListener);
+	        glView.setOnClickListener(gestureListener); 
+	        glView.setOnTouchListener(gestureListener.touchListener);
 		}
 	}
 	
 	public static void setupGL(int version){	
 		final int finalversion = version;
+		if(ofActivity == null)
+			Log.d("OF", "setupGL ofActivity == null!!");
 		ofActivity.runOnUiThread(new Runnable() {
 			
 			@Override
 			public void run() {
-//				gestureListener = new OFGestureListener(ofActivity);
 		        OFEGLConfigChooser.setGLESVersion(finalversion);
-//		        initView();
-//		        instance.resume();
 				
 			}
 		});
-        
-//        try {
-//        	Log.i("OF","joining");
-//			instance.resourcesExtractorThread.join();
-//			Log.i("OF","joined");
-//		} catch (InterruptedException e) {
-//			e.printStackTrace();
-//		}
-        
 	}
 	
 	/**
