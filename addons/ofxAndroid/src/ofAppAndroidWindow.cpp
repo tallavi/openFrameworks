@@ -103,12 +103,10 @@ ofAppAndroidWindow::ofAppAndroidWindow()
 :currentRenderer(new ofGLRenderer(this))
 ,glesVersion(1){
 	window = this;
-	ofLogError("ofAppAndroidWindow") << "Constructor";
 }
 
 ofAppAndroidWindow::~ofAppAndroidWindow() {
 	// TODO Auto-generated destructor stub
-	ofLogError("ofAppAndroidWindow") << "Destructor";
 }
 
 void ofAppAndroidWindow::setup(const ofGLESWindowSettings & settings){
@@ -259,10 +257,7 @@ Java_cc_openframeworks_OFAndroid_setAppDataDir( JNIEnv*  env, jobject  thiz, jst
 
 void Java_cc_openframeworks_OFAndroid_onCreate( JNIEnv*  env, jclass  clazz)
 {
-	ofLogVerbose("OFAndroid")<<"OFAndroid_onCreate"<<std::endl;
-	ofEvent<void>& temp = ofxAndroidEvents().create;
-	ofLogVerbose("OFAndroid")<<"create: "<<&temp<<std::endl;
-	ofNotifyEvent(temp);
+	ofNotifyEvent(ofxAndroidEvents().create);
 }
 
 void
@@ -278,7 +273,6 @@ Java_cc_openframeworks_OFAndroid_onPause( JNIEnv*  env, jobject  thiz ){
 
 void
 Java_cc_openframeworks_OFAndroid_onResume( JNIEnv*  env, jobject  thiz ){
-	ofLogNotice("ofAppAndroidWindow") << "onResume";
 	if(paused){
 		ofNotifyEvent(ofxAndroidEvents().resume);
 		paused = false;
@@ -293,22 +287,18 @@ Java_cc_openframeworks_OFAndroid_onStop( JNIEnv*  env, jobject  thiz ){
 
 void
 Java_cc_openframeworks_OFAndroid_onDestroy( JNIEnv*  env, jclass  thiz ){
-//	ofExitCallback();
-	ofLogVerbose("OFAndroid")<<"OFAndroid_onDestroy"<<std::endl;
-	ofNotifyEvent(ofxAndroidEvents().destroy);
+	ofExitCallback();
 }
 
 void
 Java_cc_openframeworks_OFAndroid_onSurfaceDestroyed( JNIEnv*  env, jclass  thiz ){
 	surfaceDestroyed = true;
-	ofLogNotice("ofAppAndroidWindow") << "onSurfaceDestroyed";
 	ofNotifyEvent(ofxAndroidEvents().unloadGL);
 }
 
 void
 Java_cc_openframeworks_OFAndroid_onSurfaceCreated( JNIEnv*  env, jclass  thiz ){
 	if(appSetup){
-		ofLogNotice("ofAppAndroidWindow") << "onSurfaceCreated";
 		if(!surfaceDestroyed){
 			ofNotifyEvent(ofxAndroidEvents().unloadGL);
 		}
@@ -318,20 +308,14 @@ Java_cc_openframeworks_OFAndroid_onSurfaceCreated( JNIEnv*  env, jclass  thiz ){
 		ofPopStyle();
 		surfaceDestroyed = false;
 	}else{
-		ofLogNotice("ofAppAndroidWindow") << "onSurfaceCreated1";
-		if(window == nullptr)
-			ofLogNotice("ofAppAndroidWindow") << "onSurfaceCreated null";
+
 	    if(window->renderer()->getType()==ofGLProgrammableRenderer::TYPE)
 	    {
-	    	ofLogNotice("ofAppAndroidWindow") << "onSurfaceCreated2";
 	    	static_cast<ofGLProgrammableRenderer*>(window->renderer().get())->setup(2,0);
-	    	ofLogNotice("ofAppAndroidWindow") << "onSurfaceCreated3";
 	    }
 	    else
 	    {
-	    	ofLogNotice("ofAppAndroidWindow") << "onSurfaceCreated4";
 	    	static_cast<ofGLRenderer*>(window->renderer().get())->setup();
-	    	ofLogNotice("ofAppAndroidWindow") << "onSurfaceCreated5";
 	    }
 	    ofLogNotice() << "renderer created";
 	}
@@ -340,7 +324,6 @@ Java_cc_openframeworks_OFAndroid_onSurfaceCreated( JNIEnv*  env, jclass  thiz ){
 void
 Java_cc_openframeworks_OFAndroid_setup( JNIEnv*  env, jclass  thiz, jint w, jint h  )
 {
-	ofLogNotice("ofAppAndroidWindow") << "setup";
 	paused = false;
     sWindowWidth  = w;
     sWindowHeight = h;
@@ -362,7 +345,6 @@ void
 Java_cc_openframeworks_OFAndroid_exit( JNIEnv*  env, jclass  thiz )
 {
 	window->events().notifyExit();
-	ofExitCallback();
 }
 
 /* Call to render the next GL frame */
