@@ -25,6 +25,7 @@ import android.net.wifi.WifiManager.MulticastLock;
 import android.os.Environment;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.ScaleGestureDetector;
 import android.view.SurfaceView;
 import android.view.WindowManager.LayoutParams;
 import android.widget.ArrayAdapter;
@@ -406,6 +407,10 @@ public class OFAndroid {
     public static native void onTouchCancelled(int id,float x,float y);
     
     public static native void onSwipe(int id, int swipeDir);
+    
+    public static native boolean onScaleBegin(ScaleGestureDetector detector);
+    public static native void onScaleEnd(ScaleGestureDetector detector);
+    public static native boolean onScale(ScaleGestureDetector detector);
     
     public static native void onKeyDown(int keyCode);
     public static native void onKeyUp(int keyCode);
