@@ -11,29 +11,29 @@ public class OFAndroidLifeCycle
 	private static final int POP = 2;
 	private static final int PUSH = 3;
 	
-	private static Vector<State> M_STATES_STACK = new Vector<State>();
-	private static State M_CURRENT_STATE = null;
+	private static Vector<State> m_statesStack = new Vector<State>();
+	private static State m_currentState = null;
 	
-	private static AtomicBoolean M_IS_WORKER_DONE = new AtomicBoolean(true);
+	private static AtomicBoolean m_isWorkerDone = new AtomicBoolean(true);
 	
-	private static ILifeCycleCallback M_CALLBACK = null; 
-	private static Activity M_ACTIVITY = null;
+	private static ILifeCycleCallback m_callback = null; 
+	private static Activity m_activity = null;
 	
 	private static void pushState(State state)
 	{
 		int action = 0;
 		do
 		{
-			if(M_STATES_STACK.isEmpty())
+			if(m_statesStack.isEmpty())
 			{
 				action = PUSH;
 				break;
 			}
-			State lastState = M_STATES_STACK.lastElement();
+			State lastState = m_statesStack.lastElement();
 			action= isDisableState(lastState, state);
 			if(action == POP)
 			{
-				M_STATES_STACK.remove(lastState);
+				m_statesStack.remove(lastState);
 			}
 		}
 		while(action == POP);
@@ -41,10 +41,10 @@ public class OFAndroidLifeCycle
 		switch (action)
 		{
 		case POP_AND_REMOVE_SELF:
-			M_STATES_STACK.remove(M_STATES_STACK.size()-1);
+			m_statesStack.remove(m_statesStack.size()-1);
 			break;
 		case PUSH:
-			M_STATES_STACK.add(state);
+			m_statesStack.add(state);
 			break;
 
 		default:
@@ -102,27 +102,27 @@ public class OFAndroidLifeCycle
 		switch(next)
 		{
 		case init:
-			if(M_CURRENT_STATE != null)
+			if(m_currentState != null)
 				isLegal = false;
 			break;
 		case create:
-			if(!(M_CURRENT_STATE.equals(State.init)||M_CURRENT_STATE.equals(State.destroy)))
+			if(!(m_currentState.equals(State.init)||m_currentState.equals(State.destroy)))
 				isLegal = false;
 			break;
 		case resume:
-			if(!(M_CURRENT_STATE.equals(State.create)||M_CURRENT_STATE.equals(State.pause)))
+			if(!(m_currentState.equals(State.create)||m_currentState.equals(State.pause)))
 				isLegal = false;
 			break;
 		case pause:
-			if(!M_CURRENT_STATE.equals(State.resume))
+			if(!m_currentState.equals(State.resume))
 				isLegal = false;
 			break;
 		case destroy:
-			if(!(M_CURRENT_STATE.equals(State.pause)||M_CURRENT_STATE.equals(State.create)))
+			if(!(m_currentState.equals(State.pause)||m_currentState.equals(State.create)))
 				isLegal = false;
 			break;
 		case exit:
-			if(!(M_CURRENT_STATE.equals(State.init)||M_CURRENT_STATE.equals(State.destroy)))
+			if(!(m_currentState.equals(State.init)||m_currentState.equals(State.destroy)))
 				isLegal = false;
 			break;
 		}
@@ -131,11 +131,11 @@ public class OFAndroidLifeCycle
 	
 	private static void startWorkerThread() throws IllegalStateException
 	{
-		synchronized (M_IS_WORKER_DONE) 
+		synchronized (m_isWorkerDone) 
 		{
-			if(!M_IS_WORKER_DONE.get())
+			if(!m_isWorkerDone.get())
 				return;
-			M_IS_WORKER_DONE.set(false);
+			m_isWorkerDone.set(false);
 		}
 		Thread worker = new Thread(new Runnable() {
 			
@@ -144,23 +144,23 @@ public class OFAndroidLifeCycle
 			{
 				// TODO Auto-generated method stub
 				Runnable callbackFunction = null;
-				while(!M_STATES_STACK.isEmpty())
+				while(!m_statesStack.isEmpty())
 				{
-					State next = M_STATES_STACK.firstElement();
-					M_STATES_STACK.removeElement(next);
+					State next = m_statesStack.firstElement();
+					m_statesStack.removeElement(next);
 					if(!isNextStateLegal(next))
-						throw new IllegalStateException("Illegal next state! when current state "+ M_CURRENT_STATE.toString()+" next state: "+next.toString());
+						throw new IllegalStateException("Illegal next state! when current state "+ m_currentState.toString()+" next state: "+next.toString());
 					
-					M_CURRENT_STATE = next;
+					m_currentState = next;
 					switch (next) {
 					case init:
-						OFAndroidLifeCycleHelper.appInit(M_ACTIVITY);
+						OFAndroidLifeCycleHelper.appInit(m_activity);
 						callbackFunction = new Runnable() {
 							
 							@Override
 							public void run() {
 								// TODO Auto-generated method stub
-								M_CALLBACK.callbackInit();
+								m_callback.callbackInit();
 							}
 						};
 						break;
@@ -171,7 +171,7 @@ public class OFAndroidLifeCycle
 							@Override
 							public void run() {
 								// TODO Auto-generated method stub
-								M_CALLBACK.callbackCreated();
+								m_callback.callbackCreated();
 							}
 						};
 						break;
@@ -182,7 +182,7 @@ public class OFAndroidLifeCycle
 							@Override
 							public void run() {
 								// TODO Auto-generated method stub
-								M_CALLBACK.callbackResumed();
+								m_callback.callbackResumed();
 							}
 						};
 						break;
@@ -193,7 +193,7 @@ public class OFAndroidLifeCycle
 							@Override
 							public void run() {
 								// TODO Auto-generated method stub
-								M_CALLBACK.callbackPaused();
+								m_callback.callbackPaused();
 							}
 						};
 						break;
@@ -204,21 +204,22 @@ public class OFAndroidLifeCycle
 							@Override
 							public void run() {
 								// TODO Auto-generated method stub
-								M_CALLBACK.callbackDestroed();
+								m_callback.callbackDestroed();
 							}
 						};
 						break;
 					case exit:
 						OFAndroidLifeCycleHelper.exit();
+						m_currentState = null;
 						break;
 
 					default:
 						break;
 					}
 				}
-				M_ACTIVITY.runOnUiThread(callbackFunction);
-				synchronized (M_IS_WORKER_DONE) {
-					M_IS_WORKER_DONE.set(true);
+				m_activity.runOnUiThread(callbackFunction);
+				synchronized (m_isWorkerDone) {
+					m_isWorkerDone.set(true);
 				}
 			}
 		});
@@ -228,9 +229,9 @@ public class OFAndroidLifeCycle
 //============================ Life Cycle Functions ===================//
 	public static void init(ILifeCycleCallback callback, Activity activity)
 	{
-		OFAndroidLifeCycle.M_CALLBACK = callback;
-		OFAndroidLifeCycle.M_ACTIVITY = activity;
-		if(M_CURRENT_STATE != null)
+		OFAndroidLifeCycle.m_callback = callback;
+		OFAndroidLifeCycle.m_activity = activity;
+		if(m_currentState != null)
 		{
 			callback.callbackInit();
 			return;
@@ -240,8 +241,8 @@ public class OFAndroidLifeCycle
 	
 	public static void onCreate(OFActivity activity)
 	{
-		OFAndroidLifeCycle.M_ACTIVITY = activity;
-		OFAndroidLifeCycle.M_CALLBACK = activity;
+		OFAndroidLifeCycle.m_activity = activity;
+		OFAndroidLifeCycle.m_callback = activity;
 		pushState(State.create);
 	}
 	
