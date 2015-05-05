@@ -129,6 +129,11 @@ public class OFAndroid {
 		ofActivity.runOnUiThread(runnable);
 	}
 	
+	static void runOnGLThread(Runnable runnable)
+	{
+		ofActivity.getGLContentView().queueEvent(runnable);
+	}
+	
 	
 	static void reportPrecentage(float precent)
 	{
@@ -783,16 +788,6 @@ public class OFAndroid {
     	Log.i("OF","initializing app");
     }
 
-
-
-//	public static SurfaceView getGLContentView() {
-//        return mGLView;
-//	}
-	
-//	public static void setGLContentView(OFGLSurfaceView GLView)
-//	{
-//		mGLView = GLView;
-//	}
 	
 	public static void disableTouchEvents(){
 		OFGLSurfaceView glView = OFAndroid.getGLView();
@@ -821,7 +816,6 @@ public class OFAndroid {
 			@Override
 			public void run() {
 		        OFEGLConfigChooser.setGLESVersion(finalversion);
-				
 			}
 		});
 	}
