@@ -273,6 +273,7 @@ Java_cc_openframeworks_OFAndroid_onPause( JNIEnv*  env, jobject  thiz ){
 
 void
 Java_cc_openframeworks_OFAndroid_onResume( JNIEnv*  env, jobject  thiz ){
+	ofLogNotice("ofAppAndroidWindow") << "onResume";
 	if(paused){
 		ofNotifyEvent(ofxAndroidEvents().resume);
 		paused = false;
@@ -293,12 +294,14 @@ Java_cc_openframeworks_OFAndroid_onDestroy( JNIEnv*  env, jclass  thiz ){
 void
 Java_cc_openframeworks_OFAndroid_onSurfaceDestroyed( JNIEnv*  env, jclass  thiz ){
 	surfaceDestroyed = true;
+	ofLogNotice("ofAppAndroidWindow") << "onSurfaceDestroyed";
 	ofNotifyEvent(ofxAndroidEvents().unloadGL);
 }
 
 void
 Java_cc_openframeworks_OFAndroid_onSurfaceCreated( JNIEnv*  env, jclass  thiz ){
 	if(appSetup){
+		ofLogNotice("ofAppAndroidWindow") << "onSurfaceCreated";
 		if(!surfaceDestroyed){
 			ofNotifyEvent(ofxAndroidEvents().unloadGL);
 		}
@@ -324,6 +327,7 @@ Java_cc_openframeworks_OFAndroid_onSurfaceCreated( JNIEnv*  env, jclass  thiz ){
 void
 Java_cc_openframeworks_OFAndroid_setup( JNIEnv*  env, jclass  thiz, jint w, jint h  )
 {
+	ofLogNotice("ofAppAndroidWindow") << "setup";
 	paused = false;
     sWindowWidth  = w;
     sWindowHeight = h;
