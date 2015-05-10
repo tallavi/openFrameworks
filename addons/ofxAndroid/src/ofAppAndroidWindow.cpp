@@ -46,6 +46,10 @@ static bool accumulateTouchEvents = false;
 
 void ofExitCallback();
 
+//----- define in main.cpp---//
+void OFAndroidInit();
+void OFAndroidCreate();
+
 //static ofAppAndroidWindow window;
 
 JavaVM * ofGetJavaVMPtr(){
@@ -255,9 +259,14 @@ Java_cc_openframeworks_OFAndroid_setAppDataDir( JNIEnv*  env, jobject  thiz, jst
     env->ReleaseStringUTFChars(data_dir, mfile);
 }
 
+void Java_cc_openframeworks_OFAndroid_init( JNIEnv*  env, jclass  clazz)
+{
+	OFAndroidInit();
+}
+
 void Java_cc_openframeworks_OFAndroid_onCreate( JNIEnv*  env, jclass  clazz)
 {
-	ofNotifyEvent(ofxAndroidEvents().create);
+	OFAndroidCreate();
 }
 
 void
