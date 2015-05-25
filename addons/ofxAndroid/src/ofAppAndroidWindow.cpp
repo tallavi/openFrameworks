@@ -357,7 +357,8 @@ Java_cc_openframeworks_OFAndroid_resize( JNIEnv*  env, jclass  thiz, jint w, jin
 void
 Java_cc_openframeworks_OFAndroid_exit( JNIEnv*  env, jclass  thiz )
 {
-	window->events().notifyExit();
+	exit(0);
+	//window->events().notifyExit();
 }
 
 /* Call to render the next GL frame */
