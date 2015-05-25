@@ -20,6 +20,7 @@ public class OFAndroidGPS extends OFAndroidObject implements LocationListener, S
 	float[] m_currentGravityData;
 	float[] m_currentGeomagneticData;
 
+	boolean m_didReportLocation;
 	
 	private static OFAndroidGPS getInstance()
 	{
@@ -33,6 +34,9 @@ public class OFAndroidGPS extends OFAndroidObject implements LocationListener, S
 		
 		OFAndroidObject.activity.runOnUiThread(new Runnable(){
 			public void run(){
+				
+				m_didReportLocation = false;
+				
 				// Acquire a reference to the system Location Manager
 				LocationManager locationManager = (LocationManager) OFAndroidObject.activity.getSystemService(Context.LOCATION_SERVICE);
 				
@@ -107,9 +111,15 @@ public class OFAndroidGPS extends OFAndroidObject implements LocationListener, S
 
 	@Override
     public void onLocationChanged(Location location) {
+		
       // Called when a new location is found by the network location provider.
       //makeUseOfNewLocation(location);
-    	locationChanged(location.getAltitude(),location.getLatitude(),location.getLongitude(),location.getSpeed(),location.getBearing());
+		
+		if (location.getProvider().equals(LocationManager.GPS_PROVIDER) || !m_didReportLocation) {
+			locationChanged(location.getAltitude(),location.getLatitude(),location.getLongitude(),location.getSpeed(),location.getBearing());
+		
+			m_didReportLocation = true;
+		}
     }
 
 	@Override
