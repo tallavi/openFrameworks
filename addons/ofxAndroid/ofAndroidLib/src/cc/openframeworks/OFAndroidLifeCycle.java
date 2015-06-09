@@ -216,8 +216,8 @@ public class OFAndroidLifeCycle
 					default:
 						break;
 					}
+					m_activity.runOnUiThread(callbackFunction);
 				}
-				m_activity.runOnUiThread(callbackFunction);
 				synchronized (m_isWorkerDone) {
 					m_isWorkerDone.set(true);
 				}
