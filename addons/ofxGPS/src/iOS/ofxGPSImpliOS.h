@@ -35,6 +35,8 @@
 	double trueHeading;
 	double headingAccuracy;
 	//NSString * lastUpdatedCompasTimestamp
+    
+    bool m_didReportLocation;
 }
 
 @property (nonatomic, readonly) double lat;
