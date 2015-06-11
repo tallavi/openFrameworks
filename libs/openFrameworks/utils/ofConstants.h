@@ -3,8 +3,9 @@
 
 //-------------------------------
 #define OF_VERSION_MAJOR 0
-#define OF_VERSION_MINOR 8
-#define OF_VERSION_PATCH 4
+#define OF_VERSION_MINOR 9
+#define OF_VERSION_PATCH 0
+#define OF_VERSION_PRE_RELEASE "master"
 
 //-------------------------------
 
@@ -352,9 +353,18 @@ typedef TESSindex ofIndexType;
   #endif
 #endif
 
-// comment out this line to disable all poco related code
-#define OF_USING_POCO
-
+//------------------------------------------------ thread local storage
+// xcode has a bug where it won't support tls on some versions even
+// on c++11, this is a workaround that bug
+#if __cplusplus>=201103
+	#if !defined(TARGET_OSX) && !defined(TARGET_OF_IOS)
+		#define HAS_TLS 1
+	#elif __clang__
+		#if __has_feature(cxx_thread_local)
+			#define HAS_TLS 1
+		#endif
+	#endif
+#endif
 
 //we don't want to break old code that uses ofSimpleApp
 //so we forward declare ofBaseApp and make ofSimpleApp mean the same thing

@@ -28,12 +28,18 @@ static bool librariesInitialized = false;
 static FT_Library library;
 
 //--------------------------------------------------------
+void ofTrueTypeShutdown(){
+#ifdef TARGET_LINUX
+	FcFini();
+#endif
+}
+
+//--------------------------------------------------------
 void ofTrueTypeFont::setGlobalDpi(int newDpi){
 	ttfGlobalDpi = newDpi;
 }
 
 //--------------------------------------------------------
-static ofTTFCharacter makeContoursForCharacter(FT_Face &face);
 static ofTTFCharacter makeContoursForCharacter(FT_Face &face){
 
 		//int num			= face->glyph->outline.n_points;
@@ -170,20 +176,10 @@ static ofTTFCharacter makeContoursForCharacter(FT_Face &face){
 }
 
 #if defined(TARGET_ANDROID)
-	#include <set>
-	static set<ofTrueTypeFont*> & all_fonts(){
-		static set<ofTrueTypeFont*> *all_fonts = new set<ofTrueTypeFont*>;
-		return *all_fonts;
-	}
-
-	void ofReloadAllFontTextures(){
-		for(auto font: all_fonts()){
-			font->reloadTextures();
-		}
-	}
-
+#include "ofxAndroidUtils.h"
 #endif
 
+//------------------------------------------------------------------
 bool compare_cps(const charProps & c1, const charProps & c2){
 	if(c1.tH == c2.tH) return c1.tW > c2.tW;
 	else return c1.tH > c2.tH;
@@ -191,6 +187,7 @@ bool compare_cps(const charProps & c1, const charProps & c2){
 
 
 #ifdef TARGET_OSX
+//------------------------------------------------------------------
 static string osxFontPathByName( string fontname ){
 	CFStringRef targetName = CFStringCreateWithCString(NULL, fontname.c_str(), kCFStringEncodingUTF8);
 	CTFontDescriptorRef targetDescriptor = CTFontDescriptorCreateWithNameAndSize(targetName, 0.0);
@@ -216,6 +213,7 @@ static string osxFontPathByName( string fontname ){
 // font font face -> file name name mapping
 static map<string, string> fonts_table;
 // read font linking information from registry, and store in std::map
+//------------------------------------------------------------------
 void initWindows(){
 	LONG l_ret;
 
@@ -298,6 +296,7 @@ static string winFontPathByName( string fontname ){
 #endif
 
 #ifdef TARGET_LINUX
+//------------------------------------------------------------------
 static string linuxFontPathByName(string fontname){
 	string filename;
 	FcPattern * pattern = FcNameParse((const FcChar8*)fontname.c_str());
@@ -313,6 +312,8 @@ static string linuxFontPathByName(string fontname){
 
 	if(!fontMatch){
 		ofLogError() << "linuxFontPathByName(): couldn't match font file or system font with name \"" << fontname << "\"";
+		FcPatternDestroy(fontMatch);
+		FcPatternDestroy(pattern);
 		return "";
 	}
 	FcChar8	*file;
@@ -320,12 +321,17 @@ static string linuxFontPathByName(string fontname){
 		filename = (const char*)file;
 	}else{
 		ofLogError() << "linuxFontPathByName(): couldn't find font match for \"" << fontname << "\"";
+		FcPatternDestroy(fontMatch);
+		FcPatternDestroy(pattern);
 		return "";
 	}
+	FcPatternDestroy(fontMatch);
+	FcPatternDestroy(pattern);
 	return filename;
 }
 #endif
 
+//------------------------------------------------------------------
 bool ofTrueTypeFont::initLibraries(){
 	if(!librariesInitialized){
 	    FT_Error err;
@@ -354,9 +360,6 @@ bool ofTrueTypeFont::initLibraries(){
 ofTrueTypeFont::ofTrueTypeFont(){
 	bLoadedOk		= false;
 	bMakeContours	= false;
-	#if defined(TARGET_ANDROID)
-		all_fonts().insert(this);
-	#endif
 	letterSpacing = 1;
 	spaceSize = 1;
 
@@ -378,25 +381,19 @@ ofTrueTypeFont::ofTrueTypeFont(){
 ofTrueTypeFont::~ofTrueTypeFont(){
 
 	if(face) FT_Done_Face(face);
-
-	if (bLoadedOk){
-		unloadTextures();
-	}
-
 	#if defined(TARGET_ANDROID)
-		all_fonts().erase(this);
+	ofRemoveListener(ofxAndroidEvents().unloadGL,this,&ofTrueTypeFont::unloadTextures);
+	ofRemoveListener(ofxAndroidEvents().reloadGL,this,&ofTrueTypeFont::reloadTextures);
 	#endif
 }
 
 void ofTrueTypeFont::unloadTextures(){
 	if(!bLoadedOk) return;
-
 	texAtlas.clear();
-	bLoadedOk = false;
 }
 
 void ofTrueTypeFont::reloadTextures(){
-	load(filename, fontSize, bAntiAliased, bFullCharacterSet, bMakeContours, simplifyAmt, dpi);
+	if(bLoadedOk) load(filename, fontSize, bAntiAliased, bFullCharacterSet, bMakeContours, simplifyAmt, dpi);
 }
 
 static bool loadFontFace(string fontname, int _fontSize, FT_Face & face, string & filename){
@@ -451,16 +448,15 @@ bool ofTrueTypeFont::loadFont(string _filename, int _fontSize, bool _bAntiAliase
 
 //-----------------------------------------------------------
 bool ofTrueTypeFont::load(string _filename, int _fontSize, bool _bAntiAliased, bool _bFullCharacterSet, bool _makeContours, float _simplifyAmt, int _dpi) {
+	#if defined(TARGET_ANDROID)
+	ofAddListener(ofxAndroidEvents().unloadGL,this,&ofTrueTypeFont::unloadTextures);
+	ofAddListener(ofxAndroidEvents().reloadGL,this,&ofTrueTypeFont::reloadTextures);
+	#endif
 	int border = 1;
 	initLibraries();
 
-	//------------------------------------------------
-	if (bLoadedOk == true){
-
-		// we've already been loaded, try to clean up :
-		unloadTextures();
-	}
-	//------------------------------------------------
+	// if we've already been loaded, try to clean up :
+	unloadTextures();
 
 	if( _dpi == 0 ){
 		_dpi = ttfGlobalDpi;
@@ -854,6 +850,7 @@ void ofTrueTypeFont::drawChar(int c, float x, float y, bool vFlipped) const{
 	stringQuads.addIndex(firstIndex);
 }
 
+//-----------------------------------------------------------
 int ofTrueTypeFont::getKerning(int c, int prevC) const{
     if(FT_HAS_KERNING( face ) && prevC>0 && prevC<nCharacters && c>0 && c<nCharacters){
         FT_Vector kerning;
@@ -945,78 +942,21 @@ float ofTrueTypeFont::stringWidth(string c) const{
     return rect.width;
 }
 
-
-ofRectangle ofTrueTypeFont::getStringBoundingBox(string c, float x, float y) const{
-
-    ofRectangle myRect;
-
-    if (!bLoadedOk){
-    	ofLogError("ofTrueTypeFont") << "getStringBoundingBox(): font not allocated";
-    	return myRect;
-    }
-
-	int		index	= 0;
-	int		xoffset	= 0;
-	int		yoffset	= 0;
-    int     len     = (int)c.length();
-    int     xmin    = -1;
-    int     ymin    = -1;
-    int     xmax    = -1;
-    int     ymax    = -1;
-
-    if ( len < 1 || cps.empty() ){
-        myRect.x        = x;
-        myRect.y        = y;
-        myRect.width    = 0;
-        myRect.height   = 0;
-        return myRect;
-    }
-
-    bool bFirstCharacter = true;
-    int prevCy=-1;
-	while(index < len){
-		int cy = ((unsigned char)c[index]) - NUM_CHARACTER_TO_START;
- 	    if (cy < nCharacters){ 			// full char set or not?
-	       if (c[index] == '\n') {
-               yoffset += lineHeight;
-               xoffset = 0 ; //reset X Pos back to zero
-               prevCy = -1;
-               index++;
-               continue;
-	       }
-
-	       if(cy > -1){
-				if (bFirstCharacter){
-					xmin = cps[cy].xmin+x;
-					ymin = cps[cy].ymin+y;
-					xmax = cps[cy].xmax+x;
-					ymax = cps[cy].ymax+y;
-					bFirstCharacter = false;
-				} else {
-				   	xoffset += getKerning(cy,prevCy);
-				   	
-					int charxmin = cps[cy].xmin+xoffset+x;
-					int charymin = cps[cy].ymin+yoffset+y;
-					int charxmax = cps[cy].xmax+xoffset+x;
-					int charymax = cps[cy].ymax+yoffset+y;
-
-					if (charxmin < xmin) xmin = charxmin;
-					if (charymin < ymin) ymin = charymin;
-					if (charxmax > xmax) xmax = charxmax;
-					if (charymax > ymax) ymax = charymax;
-				}
-				xoffset += cps[cy].advance * letterSpacing;
-			}
-	  	}
-    	index++;
-    	prevCy = cy;
-    }
-
-    myRect.x        = min((int)x,xmin);
-    myRect.y        = min((int)y,ymin);
-    myRect.width    = xmax-x;
-    myRect.height   = ymax-ymin;
-    return myRect;
+//-----------------------------------------------------------
+ofRectangle ofTrueTypeFont::getStringBoundingBox(string c, float x, float y, bool vflip) const{
+	ofMesh mesh = getStringMesh(c,x,y,vflip);
+	ofRectangle bb(std::numeric_limits<float>::max(),std::numeric_limits<float>::max(),0,0);
+	float maxX = std::numeric_limits<float>::min();
+	float maxY = std::numeric_limits<float>::min();
+	for(const auto & v: mesh.getVertices()){
+		bb.x = min(v.x,bb.x);
+		bb.y = min(v.y,bb.y);
+		maxX = max(v.x,maxX);
+		maxY = max(v.y,maxY);
+	}
+	bb.width = maxX - bb.x;
+	bb.height = maxY - bb.y;
+	return bb;
 }
 
 //-----------------------------------------------------------
@@ -1025,6 +965,7 @@ float ofTrueTypeFont::stringHeight(string c) const{
     return rect.height;
 }
 
+//-----------------------------------------------------------
 void ofTrueTypeFont::createStringMesh(string c, float x, float y, bool vFlipped) const{
 	
 	if(bFullCharacterSet && encoding==OF_ENCODING_UTF8){
@@ -1066,17 +1007,19 @@ void ofTrueTypeFont::createStringMesh(string c, float x, float y, bool vFlipped)
 	}
 }
 
+//-----------------------------------------------------------
 const ofMesh & ofTrueTypeFont::getStringMesh(string c, float x, float y, bool vFlipped) const{
 	stringQuads.clear();
 	createStringMesh(c,x,y,vFlipped);
 	return stringQuads;
 }
 
+//-----------------------------------------------------------
 const ofTexture & ofTrueTypeFont::getFontTexture() const{
 	return texAtlas;
 }
 
-//=====================================================================
+//-----------------------------------------------------------
 void ofTrueTypeFont::drawString(string c, float x, float y) const{
 	if (!bLoadedOk){
 		ofLogError("ofTrueTypeFont") << "drawString(): font not allocated";
@@ -1087,7 +1030,7 @@ void ofTrueTypeFont::drawString(string c, float x, float y) const{
 
 }
 
-//=====================================================================
+//-----------------------------------------------------------
 void ofTrueTypeFont::drawStringAsShapes(string c, float x, float y) const{
 
     if (!bLoadedOk){

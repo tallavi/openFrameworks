@@ -77,8 +77,16 @@ const vector<float> & ofSoundBuffer::getBuffer() const{
 	return buffer;
 }
 
-unsigned long ofSoundBuffer::getDurationMS() const{
-	return getNumFrames() / samplerate;
+uint64_t ofSoundBuffer::getDurationMS() const{
+	return uint64_t(getNumFrames()) * uint64_t(1000) / uint64_t(samplerate);
+}
+
+uint64_t ofSoundBuffer::getDurationMicros() const{
+	return uint64_t(getNumFrames()) * uint64_t(1000000) / uint64_t(samplerate);
+}
+
+uint64_t ofSoundBuffer::getDurationNanos() const{
+	return uint64_t(getNumFrames()) * uint64_t(1000000000) / uint64_t(samplerate);
 }
 
 void ofSoundBuffer::setNumChannels(int channels){
@@ -194,7 +202,7 @@ void ofSoundBuffer::addTo(ofSoundBuffer & outBuffer, std::size_t fromFrame, bool
 void ofSoundBuffer::copyTo(float * outBuffer, std::size_t nFrames, std::size_t outChannels, std::size_t fromFrame, bool loop) const{
 	// figure out how many frames we can copy before we need to stop or loop
 	std::size_t nFramesToCopy = nFrames;
-	if (int(this->getNumFrames() - fromFrame) < nFrames){
+	if ((fromFrame + nFrames) >= this->getNumFrames()){
 		nFramesToCopy = this->getNumFrames() - fromFrame;
 	}
 		
@@ -243,7 +251,7 @@ void ofSoundBuffer::copyTo(float * outBuffer, std::size_t nFrames, std::size_t o
 void ofSoundBuffer::addTo(float * outBuffer, std::size_t nFrames, std::size_t outChannels, std::size_t fromFrame, bool loop) const{
 	// figure out how many frames we can copy before we need to stop or loop
 	std::size_t nFramesToCopy = nFrames;
-	if (int(this->getNumFrames() - fromFrame) < nFrames){
+	if ((fromFrame + nFrames) >= this->getNumFrames()){
 		nFramesToCopy = this->getNumFrames() - fromFrame;
 	}
 
@@ -282,6 +290,15 @@ void ofSoundBuffer::addTo(float * outBuffer, std::size_t nFrames, std::size_t ou
 		// loop
 		addTo(outBuffer, framesRemaining, outChannels, 0, loop);
 	}
+}
+
+
+void ofSoundBuffer::append(ofSoundBuffer & other){
+	if(other.getNumChannels() != getNumChannels()){
+		ofLogError() << "can't append sound buffers with different num channels";
+		return;
+	}
+	buffer.insert(buffer.end(),other.buffer.begin(),other.buffer.end());
 }
 
 static bool prepareBufferForResampling(const ofSoundBuffer &in, ofSoundBuffer &out, unsigned int numFrames) {

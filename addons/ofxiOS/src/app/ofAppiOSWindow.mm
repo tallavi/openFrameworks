@@ -282,7 +282,6 @@ bool ofAppiOSWindow::enableRendererES2() {
     }
     shared_ptr<ofBaseRenderer>renderer (new ofGLProgrammableRenderer(this));
     ofSetCurrentRenderer(renderer);
-
     return true;
 }
 

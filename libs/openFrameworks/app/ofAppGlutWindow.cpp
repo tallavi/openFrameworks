@@ -335,7 +335,9 @@ void ofAppGlutWindow::setup(const ofGLWindowSettings & settings){
 		setWindowIcon(iconPixels);
     }
 #endif
-	setWindowPosition(settings.position.x,settings.position.y);
+	if (settings.isPositionSet()) {
+		setWindowPosition(settings.getPosition().x,settings.getPosition().y);
+	}
 }
 
 #ifdef TARGET_LINUX
@@ -815,7 +817,11 @@ void ofAppGlutWindow::resize_cb(int w, int h) {
 
 //------------------------------------------------------------
 void ofAppGlutWindow::entry_cb(int state) {
-	instance->events().notifyWindowEntry( state );
+	if (state == GLUT_ENTERED){
+		instance->events().notifyMouseEntered(instance->events().getMouseX(), instance->events().getMouseY());
+	}else if (state == GLUT_LEFT){
+		instance->events().notifyMouseExited(instance->events().getMouseX(), instance->events().getMouseY());
+	}
 }
 
 //------------------------------------------------------------
