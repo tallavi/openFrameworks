@@ -20,6 +20,7 @@ public class OFAndroidGPS extends OFAndroidObject implements LocationListener, S
 	float[] m_currentGravityData;
 	float[] m_currentGeomagneticData;
 
+	boolean m_didReportLocation;
 	
 	private static OFAndroidGPS getInstance()
 	{
@@ -33,6 +34,9 @@ public class OFAndroidGPS extends OFAndroidObject implements LocationListener, S
 		
 		OFAndroidObject.activity.runOnUiThread(new Runnable(){
 			public void run(){
+				
+				m_didReportLocation = false;
+				
 				// Acquire a reference to the system Location Manager
 				LocationManager locationManager = (LocationManager) OFAndroidObject.activity.getSystemService(Context.LOCATION_SERVICE);
 				
@@ -73,18 +77,8 @@ public class OFAndroidGPS extends OFAndroidObject implements LocationListener, S
 				
 				sensorManager.registerListener(
 						OFAndroidGPS.this, 
-						sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),
-						SensorManager.SENSOR_DELAY_UI);
-				
-				sensorManager.registerListener(
-						OFAndroidGPS.this, 
-						sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), 
-						SensorManager.SENSOR_DELAY_UI);
-				
-				sensorManager.registerListener(
-						OFAndroidGPS.this, 
-						sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE),
-						SensorManager.SENSOR_DELAY_UI);
+						sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR),
+						200); //200ms
 				
 				m_compassStarted = true;
 			}
@@ -107,32 +101,31 @@ public class OFAndroidGPS extends OFAndroidObject implements LocationListener, S
 
 	@Override
     public void onLocationChanged(Location location) {
+		
       // Called when a new location is found by the network location provider.
       //makeUseOfNewLocation(location);
-    	locationChanged(location.getAltitude(),location.getLatitude(),location.getLongitude(),location.getSpeed(),location.getBearing());
+		
+		if (location.getProvider().equals(LocationManager.GPS_PROVIDER) || !m_didReportLocation) {
+			locationChanged(location.getAltitude(),location.getLatitude(),location.getLongitude(),location.getSpeed(),location.getBearing());
+		
+			m_didReportLocation = true;
+		}
     }
 
 	@Override
 	public void onSensorChanged(SensorEvent event) {
+  
+		float[] rotationMatrix = new float[16];
+		SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
+		
+		SensorManager.remapCoordinateSystem(rotationMatrix, SensorManager.AXIS_X, SensorManager.AXIS_Y, rotationMatrix);
 
-		if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER)
-			m_currentGravityData = event.values;
+		float[] orientation = new float[3];
 		
-		if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD)
-			m_currentGeomagneticData = event.values;
+		SensorManager.getOrientation(rotationMatrix, orientation);
+	
+		headingChanged(360 - Math.toDegrees(orientation[0]));
 		
-		if (m_currentGravityData != null && m_currentGeomagneticData != null) {
-			float R[] = new float[9];
-			float I[] = new float[9];
-			boolean success = SensorManager.getRotationMatrix(R, I, m_currentGravityData, m_currentGeomagneticData);
-			
-			if (success) {
-				float orientation[] = new float[3];
-				SensorManager.getOrientation(R, orientation);
-				
-				headingChanged(360 - orientation[0] * 180 / Math.PI); // orientation contains: azimut, pitch and roll
-			}
-		}
 	}
 	
 	@Override

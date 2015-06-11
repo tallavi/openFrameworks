@@ -7,6 +7,9 @@ import android.util.FloatMath;
 import android.util.Log;
 
 public class OFAndroidSoundPlayer extends OFAndroidObject{
+	
+	final boolean ALLOW_BACKGROUND_ACTIVITY = true;
+	
 	OFAndroidSoundPlayer(){
 		pan = 0.f;
 		volume = leftVolume = rightVolume = 1;
@@ -191,9 +194,8 @@ public class OFAndroidSoundPlayer extends OFAndroidObject{
 	boolean isLoaded(){
 		return bIsLoaded;
 	}
-
-	@Override
-	protected void appPause() {
+	
+	private void doStopSound() {
 		stop();
 		String currFileName = fileName;
 		boolean currIsLoaded = bIsLoaded; 
@@ -203,7 +205,20 @@ public class OFAndroidSoundPlayer extends OFAndroidObject{
 	}
 
 	@Override
+	protected void appPause() {
+		
+		if (ALLOW_BACKGROUND_ACTIVITY)
+			return;
+		
+		doStopSound();
+	}
+
+	@Override
 	protected void appResume() {
+		
+		if (ALLOW_BACKGROUND_ACTIVITY)
+			return;
+		
 		if(bIsLoaded){
 			loadSound(fileName, stream);
 		}
@@ -211,7 +226,7 @@ public class OFAndroidSoundPlayer extends OFAndroidObject{
 
 	@Override
 	protected void appStop() {
-		appPause();
+		doStopSound();
 	}
 	
 	
