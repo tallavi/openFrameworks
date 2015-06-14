@@ -9,6 +9,9 @@ project(':examples').projectDir = new File(ofxRoot + 'examples')
 include ':apps'
 project(':apps').projectDir = new File(ofxRoot + 'apps')
 
+include ':trailze'
+project(':trailze').projectDir = new File(ofxRoot + '../../TrailzeApp')
+
 include ':ofAndroidLib'
 project(':ofAndroidLib').projectDir = new File(ofxRoot + 'addons/ofxAndroid/ofAndroidLib')
 
