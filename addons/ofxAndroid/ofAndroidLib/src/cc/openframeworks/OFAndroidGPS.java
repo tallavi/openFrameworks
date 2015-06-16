@@ -115,8 +115,25 @@ public class OFAndroidGPS extends OFAndroidObject implements LocationListener, S
 	@Override
 	public void onSensorChanged(SensorEvent event) {
   
-		float[] rotationMatrix = new float[16];
-		SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
+		float[] rotationMatrix = new float[9];
+
+		if (event.values.length > 4) {
+
+			// On some Samsung devices SensorManager.getRotationMatrixFromVector
+			// appears to throw an exception if rotation vector has length > 4.
+			// For the purposes of this class the first 4 values of the
+			// rotation vector are sufficient (see crbug.com/335298 for details).
+
+			float[] truncatedValues = new float[4];
+
+			System.arraycopy(event.values, 0, truncatedValues, 0, 4);
+
+			SensorManager.getRotationMatrixFromVector(rotationMatrix, truncatedValues);
+		}
+		else {
+
+			SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
+		}
 		
 		SensorManager.remapCoordinateSystem(rotationMatrix, SensorManager.AXIS_X, SensorManager.AXIS_Y, rotationMatrix);
 
