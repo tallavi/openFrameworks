@@ -1,9 +1,11 @@
 package cc.openframeworks;
 
 import java.util.Vector;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.app.Activity;
+import android.util.Log;
 
 public class OFAndroidLifeCycle
 {
@@ -13,44 +15,51 @@ public class OFAndroidLifeCycle
 	
 	private static Vector<State> m_statesStack = new Vector<State>();
 	private static State m_currentState = null;
-	
+	private static Semaphore m_semaphor = new Semaphore(1, false);
 	private static AtomicBoolean m_isWorkerDone = new AtomicBoolean(true);
-	
+
 	private static ILifeCycleCallback m_callback = null; 
 	private static Activity m_activity = null;
 	
 	private static void pushState(State state)
 	{
 		int action = 0;
-		do
-		{
-			if(m_statesStack.isEmpty())
-			{
-				action = PUSH;
-				break;
-			}
-			State lastState = m_statesStack.lastElement();
-			action= isDisableState(lastState, state);
-			if(action == POP)
-			{
-				m_statesStack.remove(lastState);
-			}
-		}
-		while(action == POP);
-		
-		switch (action)
-		{
-		case POP_AND_REMOVE_SELF:
-			m_statesStack.remove(m_statesStack.size()-1);
-			break;
-		case PUSH:
-			m_statesStack.add(state);
-			break;
+//        close
+        try {
+            m_semaphor.acquire();
+            do {
+                if (m_statesStack.isEmpty()) {
+                    action = PUSH;
+                    break;
+                }
+                State lastState = m_statesStack.lastElement();
+                action = isDisableState(lastState, state);
+                if (action == POP) {
+                    m_statesStack.remove(lastState);
+                }
+            }
+            while (action == POP);
+            
+            switch (action) {
+                case POP_AND_REMOVE_SELF:
+                    m_statesStack.remove(m_statesStack.size() - 1);
+                    break;
+                case PUSH:
+                    m_statesStack.add(state);
+                    break;
 
-		default:
-			break;
-		}
-		startWorkerThread();
+                default:
+                    break;
+            }
+//        release
+            m_semaphor.release();
+            startWorkerThread();
+        }
+        catch (InterruptedException ex)
+        {
+            Log.e(OFAndroidLifeCycle.class.getSimpleName(), "pushState exception message: "+ex.getMessage(), ex);
+            throw new RuntimeException("pushState state: "+ state +" exception message: "+ex.getMessage());
+        }
 	}
 	
 	private static int isDisableState(State lastInStack, State newState)
@@ -144,80 +153,94 @@ public class OFAndroidLifeCycle
 			{
 				// TODO Auto-generated method stub
 				Runnable callbackFunction = null;
-				while(!m_statesStack.isEmpty())
-				{
-					State next = m_statesStack.firstElement();
-					m_statesStack.removeElement(next);
-					if(!isNextStateLegal(next))
-						throw new IllegalStateException("Illegal next state! when current state "+ m_currentState.toString()+" next state: "+next.toString());
-					
-					m_currentState = next;
-					switch (next) {
-					case init:
-						OFAndroidLifeCycleHelper.appInit(m_activity);
-						callbackFunction = new Runnable() {
-							
-							@Override
-							public void run() {
-								// TODO Auto-generated method stub
-								m_callback.callbackInit();
-							}
-						};
-						break;
-					case create:
-						OFAndroidLifeCycleHelper.onCreate();
-						callbackFunction = new Runnable() {
-							
-							@Override
-							public void run() {
-								// TODO Auto-generated method stub
-								m_callback.callbackCreated();
-							}
-						};
-						break;
-					case resume:
-						OFAndroidLifeCycleHelper.onResume();
-						callbackFunction = new Runnable() {
-							
-							@Override
-							public void run() {
-								// TODO Auto-generated method stub
-								m_callback.callbackResumed();
-							}
-						};
-						break;
-					case pause:
-						OFAndroidLifeCycleHelper.onPause();
-						callbackFunction = new Runnable() {
-							
-							@Override
-							public void run() {
-								// TODO Auto-generated method stub
-								m_callback.callbackPaused();
-							}
-						};
-						break;
-					case destroy:
-						OFAndroidLifeCycleHelper.onDestroy();
-						callbackFunction = new Runnable() {
-							
-							@Override
-							public void run() {
-								// TODO Auto-generated method stub
-								m_callback.callbackDestroed();
-							}
-						};
-						break;
-					case exit:
-						OFAndroidLifeCycleHelper.exit();
-						m_currentState = null;
-						break;
+//close
+                try {
+                    m_semaphor.acquire();
+                    while (!m_statesStack.isEmpty()) {
+                        State next = m_statesStack.firstElement();
+                        m_statesStack.removeElement(next);
+//                    release
+                        m_semaphor.release();
+                        if (!isNextStateLegal(next))
+                            throw new IllegalStateException("Illegal next state! when current state " + m_currentState.toString() + " next state: " + next.toString());
 
-					default:
-						break;
-					}
-					m_activity.runOnUiThread(callbackFunction);
-				}
+                        m_currentState = next;
+                        switch (next) {
+                            case init:
+                                OFAndroidLifeCycleHelper.appInit(m_activity);
+                                callbackFunction = new Runnable() {
+
+                                    @Override
+                                    public void run() {
+                                        // TODO Auto-generated method stub
+                                        m_callback.callbackInit();
+                                    }
+                                };
+                                break;
+                            case create:
+                                OFAndroidLifeCycleHelper.onCreate();
+                                callbackFunction = new Runnable() {
+
+                                    @Override
+                                    public void run() {
+                                        // TODO Auto-generated method stub
+                                        m_callback.callbackCreated();
+                                    }
+                                };
+                                break;
+                            case resume:
+                                OFAndroidLifeCycleHelper.onResume();
+                                callbackFunction = new Runnable() {
+
+                                    @Override
+                                    public void run() {
+                                        // TODO Auto-generated method stub
+                                        m_callback.callbackResumed();
+                                    }
+                                };
+                                break;
+                            case pause:
+                                OFAndroidLifeCycleHelper.onPause();
+                                callbackFunction = new Runnable() {
+
+                                    @Override
+                                    public void run() {
+                                        // TODO Auto-generated method stub
+                                        m_callback.callbackPaused();
+                                    }
+                                };
+                                break;
+                            case destroy:
+                                OFAndroidLifeCycleHelper.onDestroy();
+                                callbackFunction = new Runnable() {
+
+                                    @Override
+                                    public void run() {
+                                        // TODO Auto-generated method stub
+                                        m_callback.callbackDestroed();
+                                    }
+                                };
+                                break;
+                            case exit:
+                                OFAndroidLifeCycleHelper.exit();
+                                m_currentState = null;
+                                break;
+
+                            default:
+                                break;
+                        }
+                        m_activity.runOnUiThread(callbackFunction);
+                        //close
+                        m_semaphor.acquire();
+                    }
+                }
+                catch (InterruptedException ex)
+                {
+                    Log.e(OFAndroidLifeCycle.class.getSimpleName(), "startWorkerThread: stack size: "+m_statesStack.size() + "exception message: "+ex.getMessage(), ex);
+                    m_semaphor.release();
+                }
+//                release
+                m_semaphor.release();
 				synchronized (m_isWorkerDone) {
 					m_isWorkerDone.set(true);
 				}
