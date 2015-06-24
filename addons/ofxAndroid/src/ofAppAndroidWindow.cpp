@@ -38,7 +38,7 @@ static ofAppAndroidWindow * window;
 static ofOrientation orientation = OF_ORIENTATION_DEFAULT;
 
 static queue<ofTouchEventArgs> touchEventArgsQueue;
-static ofMutex mutex;
+static ofMutex mtx;
 static bool threadedTouchEvents = false;
 static bool appSetup = false;
 static bool accumulateTouchEvents = false;
@@ -370,10 +370,10 @@ Java_cc_openframeworks_OFAndroid_render( JNIEnv*  env, jclass  thiz )
 	if(paused || surfaceDestroyed) return;
 
 	if(!threadedTouchEvents){
-		mutex.lock();
+		mtx.lock();
 		queue<ofTouchEventArgs> events = touchEventArgsQueue;
 		while(!touchEventArgsQueue.empty()) touchEventArgsQueue.pop();
-		mutex.unlock();
+		mtx.unlock();
 
 		while(!events.empty()){
 			switch(events.front().type){
@@ -425,9 +425,9 @@ Java_cc_openframeworks_OFAndroid_onTouchDown(JNIEnv*  env, jclass  thiz, jint id
 		window->events().notifyMousePressed(x,y,0);
 		ofNotifyEvent(window->events().touchDown,touch);
 	}else{
-		mutex.lock();
+		mtx.lock();
 		touchEventArgsQueue.push(touch);
-		mutex.unlock();
+		mtx.unlock();
 	}
 }
 
@@ -446,9 +446,9 @@ Java_cc_openframeworks_OFAndroid_onTouchUp(JNIEnv*  env, jclass  thiz, jint id,j
 		window->events().notifyMouseReleased(x,y,0);
 		ofNotifyEvent(window->events().touchUp,touch);
 	}else{
-		mutex.lock();
+		mtx.lock();
 		touchEventArgsQueue.push(touch);
-		mutex.unlock();
+		mtx.unlock();
 	}
 }
 
@@ -463,9 +463,9 @@ Java_cc_openframeworks_OFAndroid_onTouchCancelled(JNIEnv*  env, jclass  thiz, ji
 	if(threadedTouchEvents){
 		ofNotifyEvent(window->events().touchCancelled,touch);
 	}else{
-		mutex.lock();
+		mtx.lock();
 		touchEventArgsQueue.push(touch);
-		mutex.unlock();
+		mtx.unlock();
 	}
 }
 
@@ -485,13 +485,13 @@ Java_cc_openframeworks_OFAndroid_onTouchMoved(JNIEnv*  env, jclass  thiz, jint i
 		window->events().notifyMouseDragged(x,y,0);
 		ofNotifyEvent(window->events().touchMoved,touch);
 	}else{
-		mutex.lock();
+		mtx.lock();
 		if(accumulateTouchEvents && !touchEventArgsQueue.empty() && touchEventArgsQueue.back().type==ofTouchEventArgs::move){
 			touchEventArgsQueue.back() = touch;
 		}else{
 			touchEventArgsQueue.push(touch);
 		}
-		mutex.unlock();
+		mtx.unlock();
 	}
 }
 
@@ -507,9 +507,9 @@ Java_cc_openframeworks_OFAndroid_onTouchDoubleTap(JNIEnv*  env, jclass  thiz, ji
 		window->events().notifyMousePressed(x,y,0);
 		ofNotifyEvent(window->events().touchDoubleTap,touch);
 	}else{
-		mutex.lock();
+		mtx.lock();
 		touchEventArgsQueue.push(touch);
-		mutex.unlock();
+		mtx.unlock();
 	}
 }
 
