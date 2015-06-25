@@ -861,6 +861,11 @@ bool ofxJavaCallBoolMethod(jobject object, jclass classID, std::string methodNam
 
 }
 
+jstring ofxJavaGetJString(const std::string& string)
+{
+    return ofGetJNIEnv()->NewStringUTF(string.c_str());
+}
+
 bool ofxJavaCallBoolMethod(jobject object, std::string className, std::string methodName, std::string methodSignature, ...){
 	jclass classID = ofxJavaGetClassID(className);
 

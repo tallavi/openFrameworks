@@ -16,6 +16,8 @@ JNIEnv * ofGetJNIEnv();
 jclass ofGetJavaOFAndroid();
 jobject ofGetOFActivityObject();
 
+jstring ofxJavaGetJString(const std::string& string);
+
 jmethodID ofxJavaGetMethodID(jclass classID, std::string methodName, std::string methodSignature);
 jmethodID ofxJavaGetStaticMethodID(jclass classID, std::string methodName, std::string methodSignature);
 std::string ofxJavaGetClassName(jclass classID);
