@@ -2,10 +2,8 @@ package cc.openframeworks;
 
 import cc.openframeworks.OFAndroidLifeCycle.ILifeCycleCallback;
 import android.os.Bundle;
-import android.app.Activity;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.SurfaceView;
 import android.view.View;
 
 public abstract class OFActivity extends AppCompatActivity implements ILifeCycleCallback{
