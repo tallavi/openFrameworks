@@ -9,8 +9,17 @@ project(':examples').projectDir = new File(ofxRoot + 'examples')
 include ':apps'
 project(':apps').projectDir = new File(ofxRoot + 'apps')
 
+include ':trailze'
+project(':trailze').projectDir = new File(ofxRoot + '../../TrailzeApp')
+
 include ':ofAndroidLib'
 project(':ofAndroidLib').projectDir = new File(ofxRoot + 'addons/ofxAndroid/ofAndroidLib')
+
+//include ':trailzeCore'
+//project(':trailzeCore').projectDir = new File(ofxRoot + '../../TrailzeCore')
+//
+//include ':ofxAndroid'
+//project(':ofxAndroid').projectDir = new File(ofxRoot + '../../ThirdParty/openFrameworks-temp-master/addons/ofxAndroid/src')
 
 // your projects go here
 include 'examples:android:androidEmptyExample'
