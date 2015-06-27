@@ -5,7 +5,7 @@
 #include "ofGLRenderer.h"
 #include "ofGLProgrammableRenderer.h"
 #include "ofAppRunner.h"
-#include "Poco/URI.h"
+#include "ofFileUtils.h"
 
 #ifdef TARGET_LINUX
 	#include "ofIcon.h"
@@ -269,6 +269,7 @@ void ofAppGLFWWindow::setup(const ofGLFWWindowSettings & _settings){
     setVerticalSync(true);
 	glfwSetMouseButtonCallback(windowP, mouse_cb);
 	glfwSetCursorPosCallback(windowP, motion_cb);
+	glfwSetCursorEnterCallback(windowP, entry_cb);
 	glfwSetKeyCallback(windowP, keyboard_cb);
 	glfwSetWindowSizeCallback(windowP, resize_cb);
 	glfwSetWindowCloseCallback(windowP, exit_cb);
@@ -295,10 +296,10 @@ void ofAppGLFWWindow::setWindowIcon(const ofPixels & iconPixels){
 	buffer[0]=iconPixels.getWidth();
 	buffer[1]=iconPixels.getHeight();
 	for(int i=0;i<iconPixels.getWidth()*iconPixels.getHeight();i++){
-		buffer[i+2] = iconPixels[i*4+3]<<24;
-		buffer[i+2] += iconPixels[i*4]<<16;
+		buffer[i+2]  = iconPixels[i*4+3]<<24;
+		buffer[i+2] += iconPixels[i*4+0]<<16;
 		buffer[i+2] += iconPixels[i*4+1]<<8;
-		buffer[i+2] += iconPixels[i*4];
+		buffer[i+2] += iconPixels[i*4+2];
 	}
 
 	XChangeProperty(getX11Display(), getX11Window(), XInternAtom(getX11Display(), "_NET_WM_ICON", False), XA_CARDINAL, 32,
@@ -923,6 +924,16 @@ void ofAppGLFWWindow::motion_cb(GLFWwindow* windowP_, double x, double y) {
 }
 
 //------------------------------------------------------------
+void ofAppGLFWWindow::entry_cb(GLFWwindow *windowP_, int entered) {
+	ofAppGLFWWindow * instance = setCurrent(windowP_);
+	if(entered){
+		instance->events().notifyMouseEntered(instance->events().getMouseX(), instance->events().getMouseY());
+	}else{
+		instance->events().notifyMouseExited(instance->events().getMouseX(), instance->events().getMouseY());
+	}
+}
+
+//------------------------------------------------------------
 void ofAppGLFWWindow::scroll_cb(GLFWwindow* windowP_, double x, double y) {
 	ofAppGLFWWindow * instance = setCurrent(windowP_);
 	rotateMouseXY(instance->orientation, instance->getWidth(), instance->getHeight(), x, y);
@@ -936,7 +947,7 @@ void ofAppGLFWWindow::drop_cb(GLFWwindow* windowP_, int numFiles, const char** d
 	drag.position.set(instance->events().getMouseX(), instance->events().getMouseY());
 	drag.files.resize(numFiles);
 	for(int i=0; i<(int)drag.files.size(); i++){
-		drag.files[i] = Poco::Path(dropString[i]).toString();
+		drag.files[i] = std::filesystem::path(dropString[i]).string();
 	}
 	instance->events().notifyDragEvent(drag);
 }

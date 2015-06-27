@@ -7,7 +7,7 @@ void ofApp::setup(){
 	tdf.load("images/tdf_1972_poster.jpg");
 
 	tdfSmall.load("images/tdf_1972_poster.jpg");
-	tdfSmall.resize(tdfSmall.width / 4, tdfSmall.height / 4);
+	tdfSmall.resize(tdfSmall.getWidth() / 4, tdfSmall.getHeight() / 4);
 	tdfSmall.setImageType(OF_IMAGE_GRAYSCALE);
 
 	transparency.load("images/transparency.png");
@@ -95,6 +95,16 @@ void ofApp::mousePressed(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseEntered(int x, int y){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseExited(int x, int y){
 
 }
 
