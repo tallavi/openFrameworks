@@ -861,9 +861,9 @@ bool ofxJavaCallBoolMethod(jobject object, std::string className, std::string me
 	return result;
 }
 
-jstring ofxJavaGetJString(const std::string& string)
+void ofxJavaGetJString(const std::string& str, jstring &jstr)
 {
-	return ofGetJNIEnv()->NewStringUTF(string.c_str());
+	jstr = ofGetJNIEnv()->NewStringUTF(str.c_str());
 }
 
 ofxAndroidScaleEventArgs::ofxAndroidScaleEventArgs(jobject detector){
