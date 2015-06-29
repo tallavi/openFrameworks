@@ -56,6 +56,9 @@ static const string OF_TTF_MONO = "monospace";
 /// \}
 
 
+void ofTrueTypeShutdown();
+
+
 
 class ofTrueTypeFont{
 
@@ -90,7 +93,7 @@ public:
 	bool load(string filename,
                   int fontsize,
                   bool _bAntiAliased=true,
-                  bool _bFullCharacterSet=false,
+                  bool _bFullCharacterSet=true,
                   bool makeContours=false,
                   float simplifyAmt=0.3,
                   int dpi=0);
@@ -129,27 +132,6 @@ public:
 	///
 	/// \returns Number of characters in loaded character set.
 	int	getNumCharacters();	
-
-	/// \brief Get the current font encoding.
-	/// 
-	/// This is set by ofTrueTypeFont::setEncoding() to either `OF_ENCODING_UTF8` or 
-	/// `OF_ENCODING_ISO_8859_15`. `OF_ENCODING_ISO_8859_15` is for an 8-bit single-byte
-	/// coded graphic character sets, like ASCII while `OF_ENCODING_UTF8` is a variable-width 
-	/// encoding that can represent every character in the Unicode character set.
-	///
-	/// \returns encoding used by the font object.
-	ofTextEncoding getEncoding() const;
-	
-	/// \brief Sets the current font encoding.
-	///
-	/// Can be set to either `OF_ENCODING_UTF8` or `OF_ENCODING_ISO_8859_15`. `OF_ENCODING_ISO_8859_15` 
-	/// is for an 8-bit single-byte coded graphic character sets, like ASCII while `OF_ENCODING_UTF8` 
-	/// is a variable-width encoding that can represent every character in the Unicode character set. 
-	/// This function is useful if you are trying to draw unicode strings.
-	///
-	/// \param encoding The encoding used by the font object, either `OF_ENCODING_UTF8 or 
-	/// \param OF_ENCODING_ISO_8859_15
-	void setEncoding(ofTextEncoding encoding);
 
 	/// \}
 	/// \name Font Size
@@ -248,7 +230,7 @@ public:
 	/// \param x X position of returned rectangle.
 	/// \param y Y position of returned rectangle.
 	/// \returns Returns the bounding box of a string as a rectangle.
-	ofRectangle getStringBoundingBox(string s, float x, float y) const;
+	ofRectangle getStringBoundingBox(string s, float x, float y, bool vflip=true) const;
 
 	/// \}
 	/// \name Drawing
@@ -281,9 +263,6 @@ public:
 	vector<ofTTFCharacter> getStringAsPoints(string str, bool vflip=true, bool filled=true) const;
 	const ofMesh & getStringMesh(string s, float x, float y, bool vflip=true) const;
 	const ofTexture & getFontTexture() const;
-
-	void bind();
-	void unbind();
 
 	/// \}
 	
@@ -332,8 +311,6 @@ private:
 	friend void ofUnloadAllFontTextures();
 	friend void ofReloadAllFontTextures();
 #endif
-
-	ofTextEncoding encoding;
 	FT_Face		face;
 	void		unloadTextures();
 	void		reloadTextures();

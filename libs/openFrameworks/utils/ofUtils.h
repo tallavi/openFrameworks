@@ -9,8 +9,6 @@
 	#include <shellapi.h>
 #endif
 
-#include "Poco/Path.h"
-
 /// \name Elapsed Time
 /// \{
 
@@ -39,7 +37,7 @@ float ofGetElapsedTimef();
 /// program startup.
 ///
 /// \returns the elapsed time in milliseconds (1000 milliseconds = 1 second).
-unsigned long long ofGetElapsedTimeMillis();
+uint64_t ofGetElapsedTimeMillis();
 
 /// \brief Get the elapsed time in microseconds.
 ///
@@ -48,7 +46,7 @@ unsigned long long ofGetElapsedTimeMillis();
 /// startup.
 ///
 /// \returns the elapsed time in microseconds (1000000 microseconds = 1 second).
-unsigned long long ofGetElapsedTimeMicros();
+uint64_t ofGetElapsedTimeMicros();
 
 /// \brief Get the number of frames rendered since the program started.
 /// \returns the number of frames rendered since the program started.
@@ -80,11 +78,11 @@ unsigned int ofGetUnixTime();
 
 /// \brief Get the system time in milliseconds.
 /// \returns the system time in milliseconds.
-unsigned long long ofGetSystemTime();
+uint64_t ofGetSystemTime();
 
 /// \brief Get the system time in microseconds.
 /// \returns the system time in microseconds.
-unsigned long long ofGetSystemTimeMicros();
+uint64_t ofGetSystemTimeMicros();
 
 /// \brief Sleeps the current thread for the specified amount of milliseconds.
 /// \param millis The number of millseconds to sleep.
@@ -132,6 +130,7 @@ string ofGetTimestampString();
 ///
 /// \param timestampFormat The formatting pattern.
 /// \returns the formatted timestamp as a string.
+/// \warning an invalid timestampFormat may crash windows apps.
 string ofGetTimestampString(const string& timestampFormat);
 
 /// \brief Get the current year.
@@ -415,7 +414,7 @@ int ofStringTimesInString(const string& haystack, const string& needle);
 ///
 /// \param src The UTF-8 encoded string to convert to lowercase.
 /// \returns the UTF-8 encoded string as all lowercase characters.
-string ofToLower(const string& src);
+string ofToLower(const string& src, const string & locale="C.UTF-8");
 
 /// \brief Converts all characters in the string to uppercase.
 ///
@@ -430,7 +429,13 @@ string ofToLower(const string& src);
 ///
 /// \param src The UTF-8 encoded string to convert to uppercase.
 /// \returns the UTF-8 encoded string as all uppercase characters.
-string ofToUpper(const string& src);
+string ofToUpper(const string& src, const string & locale="C.UTF-8");
+
+string ofTrimFront(const string & src);
+string ofTrimBack(const string & src);
+string ofTrim(const string & src);
+
+void ofAppendUTF8(string & str, int utf8);
 
 /// \brief Convert a variable length argument to a string.
 /// \param format a printf-style format string.

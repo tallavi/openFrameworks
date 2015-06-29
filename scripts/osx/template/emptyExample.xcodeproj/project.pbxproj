@@ -162,8 +162,6 @@
 			<string>E4EB6923138AFD0F00A09F29</string>
 			<key>buildSettings</key>
 			<dict>
-				<key>ARCHS</key>
-				<string>$(ARCHS_STANDARD_32_BIT)</string>
 				<key>CONFIGURATION_BUILD_DIR</key>
 				<string>$(SRCROOT)/bin/</string>
 				<key>COPY_PHASE_STRIP</key>
@@ -195,13 +193,12 @@
 				<key>GCC_WARN_UNUSED_VARIABLE</key>
 				<string>NO</string>
 				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>10.6</string>
+				<string>10.8</string>
 				<key>ONLY_ACTIVE_ARCH</key>
 				<string>YES</string>
 				<key>OTHER_CPLUSPLUSFLAGS</key>
 				<array>
 					<string>-D__MACOSX_CORE__</string>
-					<string>-lpthread</string>
 					<string>-mtune=native</string>
 				</array>
 				<key>SDKROOT</key>
@@ -218,8 +215,6 @@
 			<string>E4EB6923138AFD0F00A09F29</string>
 			<key>buildSettings</key>
 			<dict>
-				<key>ARCHS</key>
-				<string>$(ARCHS_STANDARD_32_BIT)</string>
 				<key>CONFIGURATION_BUILD_DIR</key>
 				<string>$(SRCROOT)/bin/</string>
 				<key>COPY_PHASE_STRIP</key>
@@ -253,11 +248,10 @@
 				<key>GCC_WARN_UNUSED_VARIABLE</key>
 				<string>NO</string>
 				<key>MACOSX_DEPLOYMENT_TARGET</key>
-				<string>10.6</string>
+				<string>10.8</string>
 				<key>OTHER_CPLUSPLUSFLAGS</key>
 				<array>
 					<string>-D__MACOSX_CORE__</string>
-					<string>-lpthread</string>
 					<string>-mtune=native</string>
 				</array>
 				<key>SDKROOT</key>
@@ -352,6 +346,8 @@
 		</dict>
 		<key>E4B69B600A3A1757003C02F2</key>
 		<dict>
+			<key>baseConfigurationReference</key>
+			<string>E4EB6923138AFD0F00A09F29</string>
 			<key>buildSettings</key>
 			<dict>
 				<key>COMBINE_HIDPI_IMAGES</key>
@@ -393,6 +389,8 @@
 		</dict>
 		<key>E4B69B610A3A1757003C02F2</key>
 		<dict>
+			<key>baseConfigurationReference</key>
+			<string>E4EB6923138AFD0F00A09F29</string>
 			<key>buildSettings</key>
 			<dict>
 				<key>COMBINE_HIDPI_IMAGES</key>
@@ -424,6 +422,8 @@
 				<string>$(TARGET_NAME)</string>
 				<key>WRAPPER_EXTENSION</key>
 				<string>app</string>
+				<key>baseConfigurationReference</key>
+				<string>E4EB6923138AFD0F00A09F29</string>
 			</dict>
 			<key>isa</key>
 			<string>XCBuildConfiguration</string>
@@ -534,9 +534,10 @@
 			<key>shellPath</key>
 			<string>/bin/sh</string>
 			<key>shellScript</key>
-			<string>cp -f ../../../libs/fmodex/lib/osx/libfmodex.dylib "$TARGET_BUILD_DIR/$PRODUCT_NAME.app/Contents/MacOS/libfmodex.dylib"; install_name_tool -change ./libfmodex.dylib @executable_path/libfmodex.dylib "$TARGET_BUILD_DIR/$PRODUCT_NAME.app/Contents/MacOS/$PRODUCT_NAME";
+			<string>rsync -aved ../../../libs/fmodex/lib/osx/libfmodex.dylib "$TARGET_BUILD_DIR/$PRODUCT_NAME.app/Contents/MacOS/"; install_name_tool -change ./libfmodex.dylib @executable_path/libfmodex.dylib "$TARGET_BUILD_DIR/$PRODUCT_NAME.app/Contents/MacOS/$PRODUCT_NAME";
 mkdir -p "$TARGET_BUILD_DIR/$PRODUCT_NAME.app/Contents/Resources/"
-cp -f "$ICON_FILE" "$TARGET_BUILD_DIR/$PRODUCT_NAME.app/Contents/Resources/"
+rsync -aved "$ICON_FILE" "$TARGET_BUILD_DIR/$PRODUCT_NAME.app/Contents/Resources/"
+rsync -aved ../../../libs/glut/lib/osx/GLUT.framework "$TARGET_BUILD_DIR/$PRODUCT_NAME.app/Contents/Frameworks/"
 </string>
 		</dict>
 		<key>E4C2427710CC5ABF004149E2</key>

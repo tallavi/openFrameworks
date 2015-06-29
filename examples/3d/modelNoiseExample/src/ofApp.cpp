@@ -32,6 +32,7 @@ void ofApp::setup(){
 	model.setPosition(ofGetWidth()*.5, ofGetHeight() * 0.75, 0);
 	
 	light.enable();
+    light.setPosition(model.getPosition() + ofPoint(0, 0, 1600));
 }
 
 //--------------------------------------------------------------
@@ -150,6 +151,16 @@ void ofApp::mousePressed(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseEntered(int x, int y){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseExited(int x, int y){
 
 }
 
