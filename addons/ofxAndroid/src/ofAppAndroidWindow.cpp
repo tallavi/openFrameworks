@@ -20,6 +20,8 @@
 #include "ofGLProgrammableRenderer.h"
 #include "ofGLRenderer.h"
 #include "ofBaseTypes.h"
+#include "IAnalytics.h"
+#include "AnalyticsEventNames.h"
 using namespace std;
 
 static bool paused=true;
@@ -305,7 +307,18 @@ void
 Java_cc_openframeworks_OFAndroid_onSurfaceDestroyed( JNIEnv*  env, jclass  thiz ){
 	surfaceDestroyed = true;
 	ofLogNotice("ofAppAndroidWindow") << "onSurfaceDestroyed";
-	ofNotifyEvent(ofxAndroidEvents().unloadGL);
+	try
+	{
+		ofNotifyEvent(ofxAndroidEvents().unloadGL);
+	}
+	catch(std::exception &ex)
+	{
+		std::map<std::string, std::string> params;
+
+		params["what"] = ex.what();
+
+		Trailze::Core::Analytics::getAnalytics().logEvent("Java_cc_onSurfaceDestroyed", params);
+	}
 }
 
 void
