@@ -312,7 +312,7 @@ void ofTexture::allocate(const ofFloatPixels& pix, bool bUseARBExtention){
 
 #ifndef TARGET_OPENGLES
 //----------------------------------------------------------
-void ofTexture::allocate(const ofBufferObject & buffer, int glInternalFormat){
+void ofTexture::allocateAsBufferTexture(const ofBufferObject & buffer, int glInternalFormat){
 	texData.glTypeInternal = glInternalFormat;
 	texData.textureTarget = GL_TEXTURE_BUFFER;
 	allocate(texData);
@@ -716,7 +716,7 @@ void ofTexture::unbind(int textureLocation) const{
 	ofGetGLRenderer()->unbind(*this,textureLocation);
 }
 
-#ifndef TARGET_OPENGLES
+#if !defined(TARGET_OPENGLES) && defined(glBindImageTexture)
 //----------------------------------------------------------
 void ofTexture::bindAsImage(GLuint unit, GLenum access, GLint level, GLboolean layered, GLint layer){
 	glBindImageTexture(unit,texData.textureID,level,layered,layer,access,texData.glTypeInternal);
