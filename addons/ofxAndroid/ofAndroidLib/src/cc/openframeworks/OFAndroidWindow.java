@@ -307,6 +307,10 @@ class OFAndroidWindow implements GLSurfaceView.Renderer {
 		}
     }
     
+    public static void exit() {
+    	setup = false;
+    }
+    
     @Override
     public void onDrawFrame(GL10 gl) {
     	if(setup && OFAndroid.unpackingDone){

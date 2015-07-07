@@ -305,6 +305,7 @@ public class OFAndroidLifeCycleHelper
 	public static void onDestroy(){
 		Log.i(TAG,"onDestroy");
 		OFAndroid.onDestroy();
+		OFAndroidWindow.exit();
 	}
 	
 	public static void exit()
