@@ -7,7 +7,6 @@ class ofApp : public ofxAndroidApp {
 	
 private:
 
-	ofTexture myTexture;
 	ofImage myImage;
 
 	public:
@@ -29,18 +28,4 @@ private:
 		virtual void touchUp(int x, int y, int id) override;
 		virtual void touchDoubleTap(int x, int y, int id) override;
 		virtual void touchCancelled(int x, int y, int id) override;
-
-		virtual void unloadTextures() override;
-		virtual void reloadTextures() override;
-//		virtual void swipe(ofxAndroidSwipeDir swipeDir, int id) override;
-//
-//		virtual void pause() override;
-//		virtual void stop() override;
-//		virtual void resume() override;
-//		virtual void unloadTextures() override;
-//		virtual void reloadTextures() override;
-//
-//		virtual bool backPressed() override;
-//		virtual void okPressed() override;
-//		virtual void cancelPressed() override;
 };
