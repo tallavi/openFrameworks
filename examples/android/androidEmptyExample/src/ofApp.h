@@ -3,11 +3,20 @@
 #include "ofMain.h"
 #include "ofxAndroid.h"
 
+#define TEST_TEXTURE
+#define TEST_IMAGE
+
 class ofApp : public ofxAndroidApp {
 	
 private:
 
+#ifdef TEST_IMAGE
 	ofImage myImage;
+#endif
+
+#ifdef TEST_TEXTURE
+	ofTexture myTexture;
+#endif
 
 	public:
 
@@ -28,4 +37,6 @@ private:
 		virtual void touchUp(int x, int y, int id) override;
 		virtual void touchDoubleTap(int x, int y, int id) override;
 		virtual void touchCancelled(int x, int y, int id) override;
+
+		virtual void reloadTextures() override;
 };

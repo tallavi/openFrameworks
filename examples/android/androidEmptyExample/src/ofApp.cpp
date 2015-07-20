@@ -7,11 +7,17 @@ int y = 0;
 //--------------------------------------------------------------
 void ofApp::setup(){
 
-	ofLogNotice("BUG")<<"setup start";
+	ofLogNotice("ofApp")<<"setup start";
 
-	myImage.load("white.png");
+#ifdef TEST_IMAGE
 
-	ofLogNotice("BUG")<<"setup end";
+	myImage.load("blue.png");
+
+#endif
+
+	reloadTextures();
+
+	ofLogNotice("ofApp")<<"setup end";
 }
 
 //--------------------------------------------------------------
@@ -28,9 +34,20 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-	if(x == 50)
-		ofLogNotice("BUG")<<"draw";
-	myImage.draw(x,y);
+	//if(x == 50)
+	//	ofLogNotice("BUG")<<"draw";
+
+#ifdef TEST_TEXTURE
+
+	myTexture.draw(x,y);
+
+#endif
+
+#ifdef TEST_IMAGE
+
+	myImage.draw(200-x,200-y);
+
+#endif
 }
 
 //--------------------------------------------------------------
@@ -71,6 +88,30 @@ void ofApp::touchCancelled(int x, int y, int id){
 
 }
 
+void ofApp::reloadTextures() {
+
+	ofLogNotice("ofApp")<<"reloadTextures START";
+
+#ifdef TEST_TEXTURE
+
+	bool result = ofLoadImage(myTexture, "red.png");
+
+	ofLogNotice("ofTexture") << "loading into : " << &myTexture;
+
+	ofLogNotice("ofApp")<<"loaded";
+
+	ofLogNotice("ofApp") << "result = " << result;
+
+	ofLogNotice("ofApp") << "allocated = " << myTexture.isAllocated();
+
+	ofLogNotice("ofApp") << "address = " << &myTexture;
+
+#endif
+
+	ofLogNotice("ofApp")<<"reloadTextures END";
+
+}
+
 void ofApp::exit(){
-	ofLogNotice("BUG")<<"exit";
+	ofLogNotice("ofApp")<<"exit";
 }
