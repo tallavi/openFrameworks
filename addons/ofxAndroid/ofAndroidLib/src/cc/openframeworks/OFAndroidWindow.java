@@ -244,14 +244,12 @@ class OFGLSurfaceView extends GLSurfaceView{
     @Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
     	super.surfaceDestroyed(holder);
-    	OFAndroid.runOnGLThread(new Runnable() {
+    	
 			
-			@Override
-			public void run() {
+			
 				// TODO Auto-generated method stub
 				OFAndroid.onSurfaceDestroyed();
-			}
-		});
+			
 //    	OFAndroid.onSurfaceDestroyed();
 	}
     
