@@ -866,6 +866,15 @@ void ofxJavaGetJString(const std::string& str, jstring &jstr)
 	jstr = ofGetJNIEnv()->NewStringUTF(str.c_str());
 }
 
+void ofxJstringToString(JNIEnv * env, jstring jstr, std::string &str)
+{
+	jboolean isCopy;
+	const char *arrayChar = env->GetStringUTFChars(jstr, &isCopy);
+	if(isCopy == JNI_FALSE)
+		return;
+	str = arrayChar;
+}
+
 ofxAndroidScaleEventArgs::ofxAndroidScaleEventArgs(jobject detector){
 	this->detector = detector;
 }
