@@ -1,13 +1,13 @@
 package cc.openframeworks;
 
 import cc.openframeworks.OFAndroidLifeCycle.ILifeCycleCallback;
-import android.app.Activity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 
-public abstract class OFActivity extends Activity implements ILifeCycleCallback{
+public abstract class OFActivity extends AppCompatActivity implements ILifeCycleCallback{
 	public void onGLSurfaceCreated(){}
 	public void onLoadPercent(float percent){}
 	public void onUnpackingResourcesDone(){}
