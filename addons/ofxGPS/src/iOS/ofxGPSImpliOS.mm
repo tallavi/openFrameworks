@@ -21,6 +21,10 @@
 
 //C++ class implementations
 
+const double HORIZONTAL_ACCURACY_THRESHOLD = 30.0;
+const double DISTANCE_FILTER = 2.0;
+//const double DISTANCE_FILTER = kCLDistanceFilterNone;
+
 bool ofxGPS::m_locationStarted = false;
 bool ofxGPS::m_headingStarted= false;
 
@@ -171,10 +175,17 @@ void ofxGPS::stopLocation()
 {
 	if([CLLocationManager locationServicesEnabled])
 	{
+        m_didReportLocation = false;
+        
         locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation;
-        locationManager.distanceFilter = kCLDistanceFilterNone;
-        [locationManager requestAlwaysAuthorization];
+        locationManager.distanceFilter = DISTANCE_FILTER;
+        
+        if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 8.0) {
+            [locationManager requestAlwaysAuthorization];
+        }
+        
 		[locationManager startUpdatingLocation];
+        
 		return true;
 	}
 	else
@@ -217,7 +228,14 @@ void ofxGPS::stopLocation()
 		// Negative accuracy means an invalid or unavailable measurement
 		NSLog(@"LatLongUnavailable");
         locationData.hasLocation = false;
-	} else {
+	}
+    if (m_didReportLocation && newLocation.horizontalAccuracy > HORIZONTAL_ACCURACY_THRESHOLD) {
+        // not accurate enough. Don't report this unless it's the first report.
+        NSLog(@"LatLong not accurate");
+        locationData.hasLocation = false;
+    }
+    else
+    {
 		lat = newLocation.coordinate.latitude;
 		lng = newLocation.coordinate.longitude;
 		hAccuracy = newLocation.horizontalAccuracy;
@@ -231,6 +249,8 @@ void ofxGPS::stopLocation()
         locationData.latitude = lat;
         locationData.longitude = lng;
         locationData.locationAccuracy = hAccuracy;
+        
+        m_didReportLocation = true;
 	}
 
 	if (signbit(newLocation.verticalAccuracy)) {
