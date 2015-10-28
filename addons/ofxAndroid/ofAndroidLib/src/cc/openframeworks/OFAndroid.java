@@ -1,6 +1,9 @@
 package cc.openframeworks;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +25,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.MulticastLock;
+import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -774,11 +778,36 @@ public class OFAndroid {
 	}
 
     public static native boolean hasNeon();
+    
+    private static String getInfo() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("abi: ").append(Build.CPU_ABI).append("\n");
+        if (new File("/proc/cpuinfo").exists()) {
+            try {
+                BufferedReader br = new BufferedReader(new FileReader(new File("/proc/cpuinfo")));
+                String aLine;
+                while ((aLine = br.readLine()) != null) {
+                    sb.append(aLine + "\n");
+                }
+                if (br != null) {
+                    br.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } 
+        }
+        return sb.toString();
+    }
 	 
     static {
+    	Log.d("OF", "getInfo CPU: "+getInfo());
+    	String arch = System.getProperty("os.arch");
     	try{
-    	    String arch = System.getProperty("os.arch");
-    	    if(arch.contains("arm")){
+    		Log.i("OF","static x86");
+    		System.loadLibrary("OFAndroidApp_x86"); 
+    	}catch(Throwable ex)
+    	{
+	    	try{
         		Log.i("OF","static init");
         		System.loadLibrary("neondetection"); 
 	        	if(hasNeon()){
@@ -788,12 +817,10 @@ public class OFAndroid {
 	        		Log.i("OF","loading not-neon optimized library");
 	        		System.loadLibrary("OFAndroidApp");
 	        	}
-	        }else{
-	        	System.loadLibrary("OFAndroidApp");
-	        }
-    	}catch(Throwable e){
-    		Log.i("OF","failed neon detection, loading not-neon library",e);
-    		System.loadLibrary("OFAndroidApp");
+	    	}catch(Throwable e){
+	    		Log.i("OF","failed neon detection, loading not-neon library",e);
+	    		System.loadLibrary("OFAndroidApp");
+	    	}
     	}
     	Log.i("OF","initializing app");
     }
