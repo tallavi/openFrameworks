@@ -99,11 +99,8 @@ public class OFAndroidLifeCycleHelper
 		}
 		
 		
-		String app_name="";
 		try {
 			int app_name_id = Class.forName(OFAndroid.packageName+".R$string").getField("app_name").getInt(null);
-			app_name = activity.getResources().getText(app_name_id).toString().toLowerCase(Locale.US);
-			Log.i(TAG,"app name: " + app_name);
 			
 			if(copydata){
 				StatFs stat = new StatFs(dataPath);
@@ -119,8 +116,8 @@ public class OFAndroidLifeCycleHelper
     					fileId = files[i].getInt(null);
     					String resName = activity.getResources().getText(fileId).toString();
     					fileName = resName.substring(resName.lastIndexOf("/"));
-    					Log.i(TAG,"checking " + fileName);
-    					if(fileName.equals("/" + app_name + "resources.zip")){
+
+    					if(fileName.equals("/ofdataresources.zip")){
     						
 	    					from = activity.getResources().openRawResource(fileId);
 							try{
