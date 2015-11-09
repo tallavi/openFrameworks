@@ -102,6 +102,18 @@ public abstract class OFActivity extends AppCompatActivity implements ILifeCycle
 	}
 	
 	@Override
+	public void callbackInvalidNextStateError(String currentState, String newState)
+	{
+		Log.e("OF", "callbackInvalidNextStateError current State: "+currentState+" new State: "+newState);
+	}
+	
+	@Override
+	public void callbackInvalidStatePushError(String topState, String pushedState)
+	{
+		Log.e("OF", "callbackInvalidStatePushError top State: "+topState+" pushed State: "+pushedState);
+	}
+	
+	@Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
 		if (OFAndroid.keyDown(keyCode, event)) {
 		    return true;

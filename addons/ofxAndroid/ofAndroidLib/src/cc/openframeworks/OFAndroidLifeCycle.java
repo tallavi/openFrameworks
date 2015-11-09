@@ -13,6 +13,8 @@ public class OFAndroidLifeCycle
 	private static final int POP = 2;
 	private static final int PUSH = 3;
 	
+//	private static int aaa = 0;
+	
 	private static Vector<State> m_statesStack = new Vector<State>();
 	private static State m_currentState = null;
 	private static Semaphore m_semaphor = new Semaphore(1, false);
@@ -69,7 +71,10 @@ public class OFAndroidLifeCycle
 		switch (lastInStack) {
 		case create:
 			if(newState.equals(State.pause)||newState.equals(State.init)||newState.equals(State.create))
+			{
+				m_callback.callbackInvalidStatePushError(lastInStack.toString(), newState.toString());
 				throw new IllegalStateException(errorMessage);
+			} 
 			else if(newState.equals(State.exit))
 				result = POP;
 			else if(newState.equals(State.destroy))
@@ -77,7 +82,10 @@ public class OFAndroidLifeCycle
 			break;
 		case resume:
 			if(newState.equals(State.resume)||newState.equals(State.create)||newState.equals(State.init))
+			{
+				m_callback.callbackInvalidStatePushError(lastInStack.toString(), newState.toString());
 				throw new IllegalStateException(errorMessage);
+			}
 			else if(newState.equals(State.destroy))
 				result = POP;
 			else if(newState.equals(State.pause))
@@ -85,17 +93,24 @@ public class OFAndroidLifeCycle
 			break;
 		case pause:
 			if(newState.equals(State.exit)||newState.equals(State.create)||newState.equals(State.init)||newState.equals(State.pause))
+			{
+				m_callback.callbackInvalidStatePushError(lastInStack.toString(), newState.toString());
 				throw new IllegalStateException(errorMessage);
+			}
 			else if(newState.equals(State.resume))
 				result = POP_AND_REMOVE_SELF;
 			break;
 		case destroy:
 			if(newState.equals(State.destroy)||newState.equals(State.init)||newState.equals(State.resume)||newState.equals(State.pause))
+			{
+				m_callback.callbackInvalidStatePushError(lastInStack.toString(), newState.toString());
 				throw new IllegalStateException(errorMessage);
+			}
 			else if(newState.equals(State.create))
 				result = POP_AND_REMOVE_SELF;
 			break;
 		case exit:
+			m_callback.callbackInvalidStatePushError(lastInStack.toString(), newState.toString());
 			throw new IllegalStateException(errorMessage);
 
 		default:
@@ -162,7 +177,10 @@ public class OFAndroidLifeCycle
 //                    release
                         m_semaphor.release();
                         if (!isNextStateLegal(next))
+                        {
+                        	m_callback.callbackInvalidNextStateError(m_currentState.toString(), next.toString());
                             throw new IllegalStateException("Illegal next state! when current state " + m_currentState.toString() + " next state: " + next.toString());
+                        }
 
                         m_currentState = next;
                         switch (next) {
@@ -260,6 +278,8 @@ public class OFAndroidLifeCycle
 			return;
 		}
 		pushState(State.init);
+//		OFAndroidLifeCycleHelper.appInit(m_activity);
+//		callback.callbackInit();
 	}
 	
 	public static void onCreate(OFActivity activity)
@@ -271,6 +291,9 @@ public class OFAndroidLifeCycle
 	
 	public static void onResume()
 	{
+//		if(aaa++ > 5)
+//			pushState(State.create);
+//		else
 		pushState(State.resume);
 	}
 	
@@ -305,5 +328,9 @@ public class OFAndroidLifeCycle
 		public void callbackPaused();
 		
 		public void callbackDestroed();
+		
+		public void callbackInvalidNextStateError(String currentState, String newState);
+		
+		public void callbackInvalidStatePushError(String topState, String pushedState);
 	}
 }
