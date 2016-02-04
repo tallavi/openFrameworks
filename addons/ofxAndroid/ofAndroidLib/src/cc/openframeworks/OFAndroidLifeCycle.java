@@ -12,9 +12,7 @@ public class OFAndroidLifeCycle
 	private static final int POP_AND_REMOVE_SELF = 1;
 	private static final int POP = 2;
 	private static final int PUSH = 3;
-	
-//	private static int aaa = 0;
-	
+		
 	private static Vector<State> m_statesStack = new Vector<State>();
 	private static State m_currentState = null;
 	private static Semaphore m_semaphor = new Semaphore(1, false);
@@ -278,8 +276,6 @@ public class OFAndroidLifeCycle
 			return;
 		}
 		pushState(State.init);
-//		OFAndroidLifeCycleHelper.appInit(m_activity);
-//		callback.callbackInit();
 	}
 	
 	public static void onCreate(OFActivity activity)
@@ -291,9 +287,6 @@ public class OFAndroidLifeCycle
 	
 	public static void onResume()
 	{
-//		if(aaa++ > 5)
-//			pushState(State.create);
-//		else
 		pushState(State.resume);
 	}
 	
