@@ -55,6 +55,7 @@ void releaseCoreLocIfNeeded() {
     
     if (!ofxGPS::headingStarted() && !ofxGPS::locationStarted()) {
         [coreLoc release];
+        coreLoc = nil;
         isMonitoring= false;
     }
 }
@@ -145,6 +146,7 @@ void ofxGPS::stopLocation()
 - (void)dealloc 
 { 
 	[locationManager release];
+    locationManager = nil;
 	
 	[super dealloc];
 }
