@@ -138,6 +138,10 @@ void ofxGPS::stopLocation()
 		
 		locationManager = [[CLLocationManager alloc] init];
 		locationManager.delegate = self;
+        
+        if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 9.0) {
+            locationManager.allowsBackgroundLocationUpdates = YES;
+        }
 	}
 	return self;
 }
