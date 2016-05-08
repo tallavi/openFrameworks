@@ -230,6 +230,12 @@ static ofxiOSEAGLView * _instanceRef = nil;
 }
 
 //------------------------------------------------------
+
+-(void) resetTouches {
+
+	[activeTouches removeAllObjects];
+}
+
 - (void)touchesBegan:(NSSet *)touches 
            withEvent:(UIEvent *)event{
     

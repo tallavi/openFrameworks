@@ -55,6 +55,7 @@ void releaseCoreLocIfNeeded() {
     
     if (!ofxGPS::headingStarted() && !ofxGPS::locationStarted()) {
         [coreLoc release];
+        coreLoc = nil;
         isMonitoring= false;
     }
 }
@@ -137,6 +138,10 @@ void ofxGPS::stopLocation()
 		
 		locationManager = [[CLLocationManager alloc] init];
 		locationManager.delegate = self;
+        
+        if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 9.0) {
+            locationManager.allowsBackgroundLocationUpdates = YES;
+        }
 	}
 	return self;
 }
@@ -145,6 +150,7 @@ void ofxGPS::stopLocation()
 - (void)dealloc 
 { 
 	[locationManager release];
+    locationManager = nil;
 	
 	[super dealloc];
 }
