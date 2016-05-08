@@ -41,10 +41,10 @@ public class OFAndroidGPS extends OFAndroidObject implements LocationListener, S
 				LocationManager locationManager = (LocationManager) OFAndroidObject.activity.getSystemService(Context.LOCATION_SERVICE);
 				
 				// Register the listener with the Location Manager to receive location updates
-				locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, OFAndroidGPS.this);
+				locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 500, 1.0f, OFAndroidGPS.this);
 				
 				// Register the listener with the Location Manager to receive location updates
-				locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, OFAndroidGPS.this);
+				locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 1.0f, OFAndroidGPS.this);
 				
 				Location lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 				if(lastLocation!=null)
@@ -78,7 +78,7 @@ public class OFAndroidGPS extends OFAndroidObject implements LocationListener, S
 				sensorManager.registerListener(
 						OFAndroidGPS.this, 
 						sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR),
-						200); //200ms
+						100000); //200ms
 				
 				m_compassStarted = true;
 			}
