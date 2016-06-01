@@ -446,6 +446,10 @@ public class OFAndroid {
     	//ofActivity.getWindow().setAttributes(attrs);
     }
     
+	public static void initApp(){
+		Log.i("OF",	"initApp");
+	}
+    
     public static int getOrientation()
     {
     	return orientation;
