@@ -446,7 +446,7 @@ public class OFAndroid {
     	//ofActivity.getWindow().setAttributes(attrs);
     }
     
-	public static void initApp(){
+	public static void doNothing(){
 		Log.i("OF",	"initApp");
 	}
     
