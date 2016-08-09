@@ -1,11 +1,16 @@
 package cc.openframeworks;
 
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.app.Activity;
+import android.media.AudioManager;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
 
 public class OFAndroidLifeCycle
 {
@@ -17,9 +22,14 @@ public class OFAndroidLifeCycle
 	private static State m_currentState = null;
 	private static Semaphore m_semaphor = new Semaphore(1, false);
 	private static AtomicBoolean m_isWorkerDone = new AtomicBoolean(true);
+	private static AtomicBoolean m_isInit = new AtomicBoolean(false);
 
-	private static ILifeCycleCallback m_callback = null; 
 	private static Activity m_activity = null;
+	
+	private static ArrayList<Activity> m_activities = new ArrayList<Activity>();
+	private static ArrayList<Runnable> m_initializers = new ArrayList<Runnable>();
+	
+	private static OFGLSurfaceView mGLView = null;
 	
 	private static void pushState(State state)
 	{
@@ -70,7 +80,6 @@ public class OFAndroidLifeCycle
 		case create:
 			if(newState.equals(State.pause)||newState.equals(State.init)||newState.equals(State.create))
 			{
-				m_callback.callbackInvalidStatePushError(lastInStack.toString(), newState.toString());
 				throw new IllegalStateException(errorMessage);
 			} 
 			else if(newState.equals(State.exit))
@@ -81,7 +90,6 @@ public class OFAndroidLifeCycle
 		case resume:
 			if(newState.equals(State.resume)||newState.equals(State.create)||newState.equals(State.init))
 			{
-				m_callback.callbackInvalidStatePushError(lastInStack.toString(), newState.toString());
 				throw new IllegalStateException(errorMessage);
 			}
 			else if(newState.equals(State.destroy))
@@ -92,7 +100,6 @@ public class OFAndroidLifeCycle
 		case pause:
 			if(newState.equals(State.exit)||newState.equals(State.create)||newState.equals(State.init)||newState.equals(State.pause))
 			{
-				m_callback.callbackInvalidStatePushError(lastInStack.toString(), newState.toString());
 				throw new IllegalStateException(errorMessage);
 			}
 			else if(newState.equals(State.resume))
@@ -101,14 +108,12 @@ public class OFAndroidLifeCycle
 		case destroy:
 			if(newState.equals(State.destroy)||newState.equals(State.init)||newState.equals(State.resume)||newState.equals(State.pause))
 			{
-				m_callback.callbackInvalidStatePushError(lastInStack.toString(), newState.toString());
 				throw new IllegalStateException(errorMessage);
 			}
 			else if(newState.equals(State.create))
 				result = POP_AND_REMOVE_SELF;
 			break;
 		case exit:
-			m_callback.callbackInvalidStatePushError(lastInStack.toString(), newState.toString());
 			throw new IllegalStateException(errorMessage);
 
 		default:
@@ -164,8 +169,6 @@ public class OFAndroidLifeCycle
 			@Override
 			public void run() 
 			{
-				// TODO Auto-generated method stub
-				Runnable callbackFunction = null;
 //close
                 try {
                     m_semaphor.acquire();
@@ -176,7 +179,6 @@ public class OFAndroidLifeCycle
                         m_semaphor.release();
                         if (!isNextStateLegal(next))
                         {
-                        	m_callback.callbackInvalidNextStateError(m_currentState.toString(), next.toString());
                             throw new IllegalStateException("Illegal next state! when current state " + m_currentState.toString() + " next state: " + next.toString());
                         }
 
@@ -184,58 +186,21 @@ public class OFAndroidLifeCycle
                         switch (next) {
                             case init:
                                 OFAndroidLifeCycleHelper.appInit(m_activity);
-                                callbackFunction = new Runnable() {
-
-                                    @Override
-                                    public void run() {
-                                        // TODO Auto-generated method stub
-                                        m_callback.callbackInit();
-                                    }
-                                };
+                                coreInitialized();
                                 break;
                             case create:
                                 OFAndroidLifeCycleHelper.onCreate();
-                                callbackFunction = new Runnable() {
-
-                                    @Override
-                                    public void run() {
-                                        // TODO Auto-generated method stub
-                                        m_callback.callbackCreated();
-                                    }
-                                };
                                 break;
                             case resume:
                                 OFAndroidLifeCycleHelper.onResume();
-                                callbackFunction = new Runnable() {
-
-                                    @Override
-                                    public void run() {
-                                        // TODO Auto-generated method stub
-                                        m_callback.callbackResumed();
-                                    }
-                                };
+                                glResumed();
                                 break;
                             case pause:
                                 OFAndroidLifeCycleHelper.onPause();
-                                callbackFunction = new Runnable() {
-
-                                    @Override
-                                    public void run() {
-                                        // TODO Auto-generated method stub
-                                        m_callback.callbackPaused();
-                                    }
-                                };
+                                glPaused();
                                 break;
                             case destroy:
                                 OFAndroidLifeCycleHelper.onDestroy();
-                                callbackFunction = new Runnable() {
-
-                                    @Override
-                                    public void run() {
-                                        // TODO Auto-generated method stub
-                                        m_callback.callbackDestroed();
-                                    }
-                                };
                                 break;
                             case exit:
                                 OFAndroidLifeCycleHelper.exit();
@@ -245,7 +210,6 @@ public class OFAndroidLifeCycle
                             default:
                                 break;
                         }
-                        m_activity.runOnUiThread(callbackFunction);
                         //close
                         m_semaphor.acquire();
                     }
@@ -265,39 +229,127 @@ public class OFAndroidLifeCycle
 		worker.start();
 	}
 	
+	private static void coreInitialized()
+    {
+        synchronized (m_isInit) {
+        	m_isInit.set(true);
+		}
+        if(m_activity != null)
+        	m_activity.runOnUiThread(new Runnable() {
+				
+				@Override
+				public void run() {
+					for (Runnable init : m_initializers)
+			        {
+						init.run();
+			        }
+			        m_initializers.clear();
+				}
+			});
+    }
+	
+	private static void glResumed(){
+		m_activity.runOnUiThread(new Runnable() {
+			
+			@Override
+			public void run() {
+				mGLView.setVisibility(View.VISIBLE);
+			}
+		});
+	}
+	
+	private static void glPaused(){
+		m_activity.runOnUiThread(new Runnable() {
+			
+			@Override
+			public void run() {
+				mGLView.setVisibility(View.INVISIBLE);
+			}
+		});
+	}
+	
+	static Activity getActivity(){
+		return OFAndroidLifeCycle.m_activity;
+	}
+	
+	static OFGLSurfaceView getGLView(){
+		if(mGLView == null)
+		{
+			mGLView = new OFGLSurfaceView(m_activity);
+		}
+		return mGLView;
+	}
+	
+	public static void setActivity(Activity activity){
+		m_activity = activity;
+		activity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
+		OFAndroidObject.setActivity(activity);
+	}
+	
 //============================ Life Cycle Functions ===================//
-	public static void init(ILifeCycleCallback callback, Activity activity)
+	
+	public static void addPostInit(Runnable runnable)
 	{
-		OFAndroidLifeCycle.m_callback = callback;
-		OFAndroidLifeCycle.m_activity = activity;
+		if(isInit())
+			runnable.run();
+        else
+        {
+            m_initializers.add(runnable);
+        }
+	}
+	
+	public static void clearPostInit(){
+		m_initializers.clear();
+	}
+	
+	public static boolean isInit()
+	{
+		synchronized (m_isInit) {
+			return m_isInit.get();
+		}
+	}
+
+	
+	public static void init()
+	{
 		if(m_currentState != null)
 		{
-			callback.callbackInit();
 			return;
 		}
+		Log.i("OF","OFAndroid init...");
 		pushState(State.init);
 	}
 	
-	public static void onCreate(OFActivity activity)
+	public static void glCreate(Activity activity)
 	{
-		OFAndroidLifeCycle.m_activity = activity;
-		OFAndroidLifeCycle.m_callback = activity;
-		pushState(State.create);
+		getGLView();
+		if(m_activities.isEmpty())
+			pushState(State.create);
+		m_activities.add(activity);
 	}
 	
-	public static void onResume()
+	public static void glResume(ViewGroup glConteiner)
 	{
+		View glView = getGLView();
+		ViewGroup parent = (ViewGroup)glView.getParent();
+		if(parent != glConteiner){
+			if(parent != null)
+				parent.removeView(glView);
+			glConteiner.addView(glView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+		}
 		pushState(State.resume);
 	}
 	
-	public static void onPause()
+	public static void glPause()
 	{
 		pushState(State.pause);
 	}
 	
-	public static void onDestroy()
+	public static void glDestroy(Activity activity)
 	{
-		pushState(State.destroy);
+		m_activities.remove(activity);
+		if(m_activities.isEmpty())
+			pushState(State.destroy);
 	}
 	
 	public static void exit()
@@ -308,22 +360,5 @@ public class OFAndroidLifeCycle
 	public enum State 
 	{
 		init, create, resume, pause, destroy, exit;
-	}
-
-	public interface ILifeCycleCallback
-	{
-		public void callbackInit();
-		
-		public void callbackCreated();
-		
-		public void callbackResumed();
-		
-		public void callbackPaused();
-		
-		public void callbackDestroed();
-		
-		public void callbackInvalidNextStateError(String currentState, String newState);
-		
-		public void callbackInvalidStatePushError(String topState, String pushedState);
 	}
 }

@@ -6,6 +6,7 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.opengles.GL;
 import javax.microedition.khronos.opengles.GL10;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
@@ -271,13 +272,10 @@ class OFAndroidWindow implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
 		Log.i("OF","onSurfaceCreated");
 		OFAndroid.onSurfaceCreated();
-		try{
-			((OFActivity)OFAndroid.getContext()).onGLSurfaceCreated();
-		}catch(Exception e){
-			Log.e("OF","couldn call onGLSurfaceCreated",e);
-		}
+		Activity activity = OFAndroidLifeCycle.getActivity();
+		if(OFActivity.class.isInstance(activity))
+			((OFActivity)activity).onGLSurfaceCreated();
 		return;
-    	
     }
 	
 	@Override
