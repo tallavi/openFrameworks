@@ -134,7 +134,7 @@ public class OFAndroid {
 	
 	static void runOnGLThread(Runnable runnable)
 	{
-		getGLView().queueEvent(runnable);
+		OFAndroidLifeCycle.getGLView().queueEvent(runnable);
 	}
 	
 	
@@ -440,10 +440,6 @@ public class OFAndroid {
     	//ofActivity.getWindow().setAttributes(attrs);
     }
     
-	public static void doNothing(){
-		Log.i("OF",	"initApp");
-	}
-    
     public static int getOrientation()
     {
     	return orientation;
@@ -703,9 +699,9 @@ public class OFAndroid {
 		});
 	}
 	
-	public static Context getContext(){
-		return OFAndroidLifeCycle.getActivity();
-	}
+//	public static Context getContext(){
+//		return OFAndroidLifeCycle.getActivity();
+//	}
 	
 	public static String toDataPath(String path){
 		return dataPath + "/" + path;
@@ -754,8 +750,7 @@ public class OFAndroid {
 	}
 	
 	public static boolean isApplicationSetup(){
-		OFGLSurfaceView glView = OFAndroid.getGLView();
-		return glView!=null && glView.isSetup();
+		return OFAndroidLifeCycle.getGLView().isSetup();
 	}
     
     private static OFAndroidAccelerometer accelerometer;
@@ -764,66 +759,29 @@ public class OFAndroid {
 	private static String dataPath;
 	public static boolean unpackingDone;
 	
-	static OFGLSurfaceView getGLView()
-	{
-		return OFAndroidLifeCycle.getGLView();
-	}
+//	static OFGLSurfaceView getGLView()
+//	{
+//		return OFAndroidLifeCycle.getGLView();
+//	}
 
     public static native boolean hasNeon();
-	 
-    static {
-        
-        Log.i("OF","static init");
-        
-        try {
-            Log.i("OF","loading x86 library");
-            System.loadLibrary("OFAndroidApp_x86");
-        }
-        catch(Throwable ex)	{
-            Log.i("OF","failed x86 loading, trying neon detection",ex);
-            
-            try{
-                System.loadLibrary("neondetection");
-                if(hasNeon()){
-                    Log.i("OF","loading neon optimized library");
-                    System.loadLibrary("OFAndroidApp_neon");
-                }
-                else{
-                    Log.i("OF","loading not-neon optimized library");
-                    System.loadLibrary("OFAndroidApp");
-                }
-            }catch(Throwable ex2){
-                Log.i("OF","failed neon detection, loading not-neon library",ex2);
-                System.loadLibrary("OFAndroidApp");
-            }
-        }
-        Log.i("OF","initializing app");
-    }
-
 	
 	public static void disableTouchEvents(){
-		OFGLSurfaceView glView = OFAndroid.getGLView();
-		if(glView!=null){
-	        glView.setOnClickListener(null); 
-	        glView.setOnTouchListener(null);
-		}
+		OFGLSurfaceView glView = OFAndroidLifeCycle.getGLView();
+        glView.setOnClickListener(null); 
+        glView.setOnTouchListener(null);
 	}
 	
 	public static void enableTouchEvents(){
-		OFGLSurfaceView glView = OFAndroid.getGLView();
-		if(glView!=null){
-			if(gestureListener == null)
-				gestureListener = new OFGestureListener(OFAndroidLifeCycle.getActivity());
-	        glView.setOnClickListener(gestureListener); 
-	        glView.setOnTouchListener(gestureListener.touchListener);
-		}
+		OFGLSurfaceView glView = OFAndroidLifeCycle.getGLView();
+		if(gestureListener == null)
+			gestureListener = new OFGestureListener(OFAndroidLifeCycle.getActivity());
+        glView.setOnClickListener(gestureListener); 
+        glView.setOnTouchListener(gestureListener.touchListener);
 	}
 	
 	public static void setupGL(int version){	
 		final int finalversion = version;
-		Activity activity = OFAndroidLifeCycle.getActivity();
-		if(activity == null)
-			Log.d("OF", "setupGL ofActivity == null!!");
 		runOnMainThread(new Runnable() {
 			
 			@Override

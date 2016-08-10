@@ -296,11 +296,9 @@ class OFAndroidWindow implements GLSurfaceView.Renderer {
     	android.os.Process.setThreadPriority(8);
     	OFGestureListener.swipe_Min_Distance = (int)(Math.max(w, h)*.04);
     	OFGestureListener.swipe_Max_Distance = (int)(Math.max(w, h)*.6);
-		try{
-			((OFActivity)OFAndroid.getContext()).onGLSurfaceCreated();
-		}catch(Exception e){
-			Log.e("OF","couldn call onGLSurfaceCreated",e);
-		}
+    	Activity activity = OFAndroidLifeCycle.getActivity();
+		if(OFActivity.class.isInstance(activity))
+			((OFActivity)activity).onGLSurfaceCreated();
     }
     
     public static void exit() {

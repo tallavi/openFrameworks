@@ -14,6 +14,36 @@ import android.view.ViewGroup.LayoutParams;
 
 public class OFAndroidLifeCycle
 {
+	
+	static {
+        
+        Log.i("OF","static init");
+        
+        try {
+            Log.i("OF","loading x86 library");
+            System.loadLibrary("OFAndroidApp_x86");
+        }
+        catch(Throwable ex)	{
+            Log.i("OF","failed x86 loading, trying neon detection",ex);
+            
+            try{
+                System.loadLibrary("neondetection");
+                if(OFAndroid.hasNeon()){
+                    Log.i("OF","loading neon optimized library");
+                    System.loadLibrary("OFAndroidApp_neon");
+                }
+                else{
+                    Log.i("OF","loading not-neon optimized library");
+                    System.loadLibrary("OFAndroidApp");
+                }
+            }catch(Throwable ex2){
+                Log.i("OF","failed neon detection, loading not-neon library",ex2);
+                System.loadLibrary("OFAndroidApp");
+            }
+        }
+        Log.i("OF","initializing app");
+    }
+	
 	private static final int POP_AND_REMOVE_SELF = 1;
 	private static final int POP = 2;
 	private static final int PUSH = 3;
@@ -197,7 +227,6 @@ public class OFAndroidLifeCycle
                                 break;
                             case pause:
                                 OFAndroidLifeCycleHelper.onPause();
-                                glPaused();
                                 break;
                             case destroy:
                                 OFAndroidLifeCycleHelper.onDestroy();
@@ -258,26 +287,16 @@ public class OFAndroidLifeCycle
 		});
 	}
 	
-	private static void glPaused(){
-		m_activity.runOnUiThread(new Runnable() {
-			
-			@Override
-			public void run() {
-				mGLView.setVisibility(View.INVISIBLE);
-			}
-		});
-	}
-	
 	static Activity getActivity(){
 		return OFAndroidLifeCycle.m_activity;
 	}
 	
 	static OFGLSurfaceView getGLView(){
-		if(mGLView == null)
-		{
-			mGLView = new OFGLSurfaceView(m_activity);
-		}
 		return mGLView;
+	}
+	
+	static void clearGLView(){
+		mGLView = null;
 	}
 	
 	public static void setActivity(Activity activity){
@@ -320,36 +339,52 @@ public class OFAndroidLifeCycle
 		pushState(State.init);
 	}
 	
+	static String TAG = OFAndroidLifeCycle.class.getSimpleName();
+	
 	public static void glCreate(Activity activity)
 	{
-		getGLView();
+		Log.d(TAG, "glCreate");
+		if(mGLView == null)
+		{
+			Log.d(TAG, "Create surface");
+			mGLView = new OFGLSurfaceView(m_activity);
+		}
 		if(m_activities.isEmpty())
 			pushState(State.create);
 		m_activities.add(activity);
 	}
 	
-	public static void glResume(ViewGroup glConteiner)
+	public static void glResume(ViewGroup glContainer)
 	{
 		View glView = getGLView();
+		glView.setVisibility(View.INVISIBLE);
 		ViewGroup parent = (ViewGroup)glView.getParent();
-		if(parent != glConteiner){
-			if(parent != null)
+		if(parent != glContainer){
+			if(parent != null){
+				Log.d(TAG, "remove surface");
 				parent.removeView(glView);
-			glConteiner.addView(glView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+			}
+			glContainer.addView(glView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+			Log.d(TAG, "addView surface");
 		}
+		Log.d(TAG, "glResume");
 		pushState(State.resume);
 	}
 	
 	public static void glPause()
 	{
+		Log.d(TAG, "glPause");
 		pushState(State.pause);
 	}
 	
 	public static void glDestroy(Activity activity)
 	{
+		Log.d(TAG, "glDestroy");
 		m_activities.remove(activity);
-		if(m_activities.isEmpty())
+		if(m_activities.isEmpty()){
+			Log.d(TAG, "glDestroy destroy ofApp");
 			pushState(State.destroy);
+		}
 	}
 	
 	public static void exit()

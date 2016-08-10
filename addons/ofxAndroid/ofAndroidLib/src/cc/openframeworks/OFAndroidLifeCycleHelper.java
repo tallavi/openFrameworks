@@ -99,7 +99,6 @@ public class OFAndroidLifeCycleHelper
 		
 		
 		try {
-			int app_name_id = Class.forName(packageName+".R$string").getField("app_name").getInt(null);
 			
 			if(copydata){
 				StatFs stat = new StatFs(dataPath);
@@ -185,6 +184,7 @@ public class OFAndroidLifeCycleHelper
 	
 	public static void onCreate()
 	{
+		Log.d(TAG, "onCreate");
 //		OFAndroid.initOFAndroid(activity.getPackageName(), activity);
 		OFAndroid.onCreate();
 		OFAndroid.onUnpackingResourcesDone();
@@ -218,8 +218,8 @@ public class OFAndroidLifeCycleHelper
 	}
 	
 	public static void onResume(){
-		final OFGLSurfaceView glView = OFAndroid.getGLView();
-		if(glView == null || resumed) return;
+		final OFGLSurfaceView glView = OFAndroidLifeCycle.getGLView();
+		if(resumed) return;
 		Log.i(TAG,"onResume");
 		resumed = true;
 		OFAndroid.runOnMainThread(new Runnable() {
@@ -262,8 +262,7 @@ public class OFAndroidLifeCycleHelper
 						object.onPause();
 					}
 				}
-				OFGLSurfaceView glView = OFAndroid.getGLView();
-				if(glView != null) glView.onPause();
+				OFAndroidLifeCycle.getGLView().onPause();
 			}
 		});
 		
