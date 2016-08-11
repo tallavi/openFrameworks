@@ -45,7 +45,7 @@ public abstract class OFActivity extends AppCompatActivity{
 		super.onCreate(arg0);
 		OFAndroidLifeCycle.setActivity(this);
 		OFAndroidLifeCycle.init();
-		OFAndroidLifeCycle.glCreate(this);
+		OFAndroidLifeCycle.glCreate();
 		//create gesture listener
 		//register the two events
 		initView();
@@ -65,7 +65,7 @@ public abstract class OFActivity extends AppCompatActivity{
 	}
 	@Override
 	protected void onDestroy() {
-		OFAndroidLifeCycle.glDestroy(this);
+		OFAndroidLifeCycle.glDestroy();
 		super.onDestroy();
 	}
 	

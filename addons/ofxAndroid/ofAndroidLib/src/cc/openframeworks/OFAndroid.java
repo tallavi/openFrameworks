@@ -699,10 +699,6 @@ public class OFAndroid {
 		});
 	}
 	
-//	public static Context getContext(){
-//		return OFAndroidLifeCycle.getActivity();
-//	}
-	
 	public static String toDataPath(String path){
 		return dataPath + "/" + path;
 	}
@@ -758,11 +754,6 @@ public class OFAndroid {
     private static OFGestureListener gestureListener;
 	private static String dataPath;
 	public static boolean unpackingDone;
-	
-//	static OFGLSurfaceView getGLView()
-//	{
-//		return OFAndroidLifeCycle.getGLView();
-//	}
 
     public static native boolean hasNeon();
 	

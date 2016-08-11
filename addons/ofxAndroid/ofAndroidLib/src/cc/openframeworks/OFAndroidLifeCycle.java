@@ -56,7 +56,7 @@ public class OFAndroidLifeCycle
 
 	private static Activity m_activity = null;
 	
-	private static ArrayList<Activity> m_activities = new ArrayList<Activity>();
+	private static int m_countActivities = 0;
 	private static ArrayList<Runnable> m_initializers = new ArrayList<Runnable>();
 	
 	private static OFGLSurfaceView mGLView = null;
@@ -341,7 +341,7 @@ public class OFAndroidLifeCycle
 	
 	static String TAG = OFAndroidLifeCycle.class.getSimpleName();
 	
-	public static void glCreate(Activity activity)
+	public static void glCreate()
 	{
 		Log.d(TAG, "glCreate");
 		if(mGLView == null)
@@ -349,9 +349,9 @@ public class OFAndroidLifeCycle
 			Log.d(TAG, "Create surface");
 			mGLView = new OFGLSurfaceView(m_activity);
 		}
-		if(m_activities.isEmpty())
+		if(m_countActivities == 0)
 			pushState(State.create);
-		m_activities.add(activity);
+		m_countActivities++;
 	}
 	
 	public static void glResume(ViewGroup glContainer)
@@ -377,11 +377,11 @@ public class OFAndroidLifeCycle
 		pushState(State.pause);
 	}
 	
-	public static void glDestroy(Activity activity)
+	public static void glDestroy()
 	{
 		Log.d(TAG, "glDestroy");
-		m_activities.remove(activity);
-		if(m_activities.isEmpty()){
+		m_countActivities--;
+		if(m_countActivities == 0){
 			Log.d(TAG, "glDestroy destroy ofApp");
 			pushState(State.destroy);
 		}
