@@ -3,7 +3,6 @@ package cc.openframeworks;
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLDisplay;
-import javax.microedition.khronos.opengles.GL;
 import javax.microedition.khronos.opengles.GL10;
 
 import android.app.Activity;
@@ -230,6 +229,7 @@ class OFGLSurfaceView extends GLSurfaceView{
         setRenderer(mRenderer);
     }
 	
+	@Deprecated
 	public OFGLSurfaceView(Context context,AttributeSet attributes) {
         super(context,attributes);
         mRenderer = new OFAndroidWindow(getWidth(),getHeight());
@@ -245,13 +245,7 @@ class OFGLSurfaceView extends GLSurfaceView{
     @Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
     	super.surfaceDestroyed(holder);
-    	
-			
-			
-				// TODO Auto-generated method stub
-				OFAndroid.onSurfaceDestroyed();
-			
-//    	OFAndroid.onSurfaceDestroyed();
+		OFAndroid.onSurfaceDestroyed();
 	}
     
     boolean isSetup(){
