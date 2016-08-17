@@ -1,7 +1,6 @@
 package cc.openframeworks.androidEmptyExample;
 
 import android.os.Bundle;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import cc.openframeworks.OFAndroid;
