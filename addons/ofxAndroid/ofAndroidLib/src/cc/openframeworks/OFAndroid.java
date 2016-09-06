@@ -21,7 +21,9 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.MulticastLock;
+import android.os.Build;
 import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.ScaleGestureDetector;
@@ -145,6 +147,16 @@ public class OFAndroid {
 			((OFActivity)activity).onLoadPercent(precent);
 	}
 	
+	static void initOFAndroid(String appPackageName, OFActivity activity)
+	{
+		Log.i("OF","OFAndroid init...");
+		OFAndroid.ofActivity = activity;
+		ofActivity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
+		//Log.i("OF","external files dir: "+ ofActivity.getApplicationContext().getExternalFilesDir(null));
+		OFAndroid.packageName = appPackageName;
+		OFAndroidObject.setActivity(ofActivity);
+	}
+	
 	static void fatalErrorDialog(final Activity activity, final String msg){
 		activity.runOnUiThread(new Runnable(){
 			public void run() {
@@ -163,7 +175,7 @@ public class OFAndroid {
 			}  
 		});
 	}
-	
+
 	static public void onUnpackingResourcesDone(){
 		unpackingDone = true;
 		Activity activity = OFAndroidLifeCycle.getActivity();
@@ -406,8 +418,8 @@ public class OFAndroid {
     public static native void onScaleEnd(ScaleGestureDetector detector);
     public static native boolean onScale(ScaleGestureDetector detector);
     
-    public static native void onKeyDown(int keyCode);
-    public static native void onKeyUp(int keyCode);
+    public static native boolean onKeyDown(int keyCode, int unicode);
+    public static native boolean onKeyUp(int keyCode, int unicode);
     public static native boolean onBackPressed();
     
     public static native boolean onMenuItemSelected(String menu_id);
@@ -417,7 +429,8 @@ public class OFAndroid {
     public static native void cancelPressed();
     
     public static native void networkConnected(boolean conected);
-    
+
+	public static native void deviceOrientationChanged(int orientation);
 
     // static methods to be called from OF c++ code
     public static void setFullscreen(boolean fs){
@@ -456,10 +469,18 @@ public class OFAndroid {
     		OFAndroidLifeCycle.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     		break;
     	case 270:
-    		OFAndroidLifeCycle.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+			if (Build.VERSION.SDK_INT >= 9) {
+				ofActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+				break;
+			}
+    		ofActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     		break;
     	case 180:
-    		OFAndroidLifeCycle.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+			if (Build.VERSION.SDK_INT >= 9) {
+				ofActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+				break;
+			}
+    		ofActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     		break;
     	case -1:
     		OFAndroidLifeCycle.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
@@ -752,10 +773,10 @@ public class OFAndroid {
     private static OFAndroidAccelerometer accelerometer;
     private static OFAndroidGPS gps;
     private static OFGestureListener gestureListener;
+	private static OFOrientationListener orientationListener;
 	private static String dataPath;
 	public static boolean unpackingDone;
 
-    public static native boolean hasNeon();
 	
 	public static void disableTouchEvents(){
 		OFGLSurfaceView glView = OFAndroidLifeCycle.getGLView();
@@ -770,7 +791,18 @@ public class OFAndroid {
         glView.setOnClickListener(gestureListener); 
         glView.setOnTouchListener(gestureListener.touchListener);
 	}
-	
+
+	public static void enableOrientationChangeEvents(){
+		if(orientationListener == null)
+			orientationListener = new OFOrientationListener(getContext());
+		orientationListener.enable();
+	}
+
+	public static void disableOrientationChangeEvents(){
+		if(orientationListener != null)
+			orientationListener.disable();
+	}
+
 	public static void setupGL(int version){	
 		final int finalversion = version;
 		runOnMainThread(new Runnable() {
@@ -797,22 +829,9 @@ public class OFAndroid {
            		return false;
            	}
         }
-		
-        if (KeyEvent.isModifierKey(keyCode)) {
-        	/* Android sends a shift keycode (for instance),
-        	   then the key that goes with the shift. We don't need the first
-        	   keycode, that info is in event.getMetaState() anyway */
-        	return false;
-        }
-        else
-        {
-        	int unicodeChar = event.getUnicodeChar();
-        	onKeyDown(unicodeChar);
 
-        	// return false to let Android handle certain keys
-    		// like the back and menu keys
-        	return false;
-        }
+		int unicodeChar = event.getUnicodeChar();
+		return onKeyDown(keyCode, unicodeChar);
 	}
 	
 	/**
@@ -822,21 +841,8 @@ public class OFAndroid {
 	 * @return true to say we handled this, false to tell Android to handle it
 	 */
 	public static boolean keyUp(int keyCode, KeyEvent event) {
-        if (KeyEvent.isModifierKey(keyCode)) {
-        	/* Android sends a shift keycode (for instance),
-        	   then the key that goes with the shift. We don't need the first
-        	   keycode, that info is in event.getMetaState() anyway */
-        	return false;
-        }
-        else
-        {
-    		int unicodeChar = event.getUnicodeChar();
-    		onKeyUp(unicodeChar);
-    		
-    		// return false to let Android handle certain keys
-    		// like the back and menu keys
-        	return false;
-        }
+		int unicodeChar = event.getUnicodeChar();
+		return onKeyUp(keyCode, unicodeChar);
 	}
 }
 

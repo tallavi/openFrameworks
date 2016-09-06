@@ -9,7 +9,7 @@
 FORMULA_TYPES=( "osx" "ios" "tvos" "vs" "android" "emscripten" )
  
 # define the version
-VER=2.4.9
+VER=3.1.0
  
 # tools for git use
 GIT_URL=https://github.com/Itseez/opencv.git
@@ -34,14 +34,6 @@ function download() {
 # prepare the build environment, executed inside the lib src dir
 function prepare() {
   : # noop
-
-  # Patch for Clang for 2.4
-  # https://github.com/Itseez/opencv/commit/35f96d6da76099d80180439c857a4abe5cb17966
-  cd modules/legacy/src
-  if patch -p0 -u -N --dry-run --silent < $FORMULA_DIR/patch.calibfilter.cpp.patch 2>/dev/null ; then
-      patch -p0 -u < $FORMULA_DIR/patch.calibfilter.cpp.patch
-  fi
-  cd ../../../
 }
 
 # executed inside the lib src dir
@@ -123,6 +115,9 @@ function build() {
     echo "Joining all libs in one Successful"
 
   elif [ "$TYPE" == "vs" ] ; then
+    unset TMP
+    unset TEMP
+
     rm -f CMakeCache.txt
 	#LIB_FOLDER="$BUILD_DIR/opencv/build/$TYPE"
 	mkdir -p $LIB_FOLDER
@@ -496,53 +491,24 @@ function build() {
   # end if iOS
   
   elif [ "$TYPE" == "android" ]; then
-    export ANDROID_NDK=${ANDROID_NDK_ROOT}
+    export ANDROID_NDK=${NDK_ROOT}
+    
+    if [ $ABI = armeabi-v7a ] || [ $ABI = armeabi ]; then
+      local BUILD_FOLDER="build_android_arm"
+      local BUILD_SCRIPT="cmake_android_arm.sh"
+    elif [ $ABI = x86 ]; then
+      local BUILD_FOLDER="build_android_x86"
+      local BUILD_SCRIPT="cmake_android_x86.sh"
+    fi
+    
+    source ../../android_configure.sh $ABI
+
     cd platforms
     cp ${FORMULA_DIR}/android.toolchain.cmake android/
     
-    rm -rf build_android_arm
-    rm -rf build_android_x86
+    rm -rf $BUILD_FOLDER
     
-    scripts/cmake_android_arm.sh \
-      -DCMAKE_BUILD_TYPE="Release" \
-      -DBUILD_SHARED_LIBS=OFF \
-      -DBUILD_DOCS=OFF \
-      -DBUILD_EXAMPLES=OFF \
-      -DBUILD_FAT_JAVA_LIB=OFF \
-      -DBUILD_JASPER=OFF \
-      -DBUILD_PACKAGE=OFF \
-      -DBUILD_opencv_java=OFF \
-      -DBUILD_opencv_python=OFF \
-      -DBUILD_opencv_apps=OFF \
-      -DBUILD_JPEG=OFF \
-      -DBUILD_PNG=OFF \
-      -DHAVE_opencv_androidcamera=OFF \
-      -DWITH_TIFF=OFF \
-      -DWITH_OPENEXR=OFF \
-      -DWITH_1394=OFF \
-      -DWITH_JPEG=OFF \
-      -DWITH_PNG=OFF \
-      -DWITH_FFMPEG=OFF \
-      -DWITH_OPENCL=OFF \
-      -DWITH_GIGEAPI=OFF \
-      -DWITH_CUDA=OFF \
-      -DWITH_CUFFT=OFF \
-      -DWITH_JASPER=OFF \
-      -DWITH_IMAGEIO=OFF \
-      -DWITH_IPP=OFF \
-      -DWITH_OPENNI=OFF \
-      -DWITH_QT=OFF \
-      -DWITH_QUICKTIME=OFF \
-      -DWITH_V4L=OFF \
-      -DWITH_PVAPI=OFF \
-      -DWITH_EIGEN=OFF
-      -DBUILD_TESTS=OFF \
-      -DBUILD_PERF_TESTS=OFF
-    cd build_android_arm
-    make -j${PARALLEL_MAKE}
-    cd ..
-    
-    scripts/cmake_android_x86.sh \
+    scripts/${BUILD_SCRIPT} \
       -DCMAKE_BUILD_TYPE="Release" \
       -DBUILD_SHARED_LIBS=OFF \
       -DBUILD_DOCS=OFF \
@@ -576,10 +542,12 @@ function build() {
       -DWITH_PVAPI=OFF \
       -DWITH_EIGEN=OFF \
       -DBUILD_TESTS=OFF \
+      -DANDROID_STL=c++_static \
+      -DANDROID_TOOLCHAIN_NAME=${GCC_TOOLCHAIN} \
+      -DANDROID_NATIVE_API_LEVEL=android-${ANDROID_API} \
       -DBUILD_PERF_TESTS=OFF
-    cd build_android_x86
+    cd $BUILD_FOLDER
     make -j${PARALLEL_MAKE}
-    cd ..
     
   elif [ "$TYPE" == "emscripten" ]; then
     mkdir -p build_${TYPE}
@@ -649,22 +617,22 @@ function copy() {
 	
   elif [ "$TYPE" == "vs" ] ; then 
 		if [ $ARCH == 32 ] ; then
-			mkdir -p $1/lib/$TYPE/Win32
-			#copy the cv libs
-			cp -v build_vs_32/lib/Release/*.lib $1/../../addons/ofxOpenCv/libs/opencv/lib/$TYPE/Win32/
-			cp -v build_vs_32/lib/Debug/*.lib $1/../../addons/ofxOpenCv/libs/opencv/lib/$TYPE/Win32/
-			#copy the zlib 
-			cp -v build_vs_32/3rdparty/lib/Release/*.lib $1/../../addons/ofxOpenCv/libs/opencv/lib/$TYPE/Win32/
-			cp -v build_vs_32/3rdparty/lib/Debug/*.lib $1/../../addons/ofxOpenCv/libs/opencv/lib/$TYPE/Win32/
+      DEPLOY_PATH="$1/lib/$TYPE/Win32"
 		elif [ $ARCH == 64 ] ; then
-			mkdir -p $1/lib/$TYPE/x64
-			#copy the cv libs
-			cp -v build_vs_64/lib/Release/*.lib $1/../../addons/ofxOpenCv/libs/opencv/lib/$TYPE/x64/
-			cp -v build_vs_64/lib/Debug/*.lib $1/../../addons/ofxOpenCv/libs/opencv/lib/$TYPE/x64/
-			#copy the zlib 
-			cp -v build_vs_64/3rdparty/lib/Release/*.lib $1/../../addons/ofxOpenCv/libs/opencv/lib/$TYPE/x64/
-			cp -v build_vs_64/3rdparty/lib/Debug/*.lib $1/../../addons/ofxOpenCv/libs/opencv/lib/$TYPE/x64/
+			DEPLOY_PATH="$1/lib/$TYPE/x64"
 		fi
+      mkdir -p "$DEPLOY_PATH/Release"
+      mkdir -p "$DEPLOY_PATH/Debug"
+      # now make sure the target directories are clean.
+      rm -Rf "${DEPLOY_PATH}/Release/*"
+      rm -Rf "${DEPLOY_PATH}/Debug/*"
+      #copy the cv libs
+      cp -v build_vs_${ARCH}/lib/Release/*.lib "${DEPLOY_PATH}/Release"
+      cp -v build_vs_${ARCH}/lib/Debug/*.lib "${DEPLOY_PATH}/Debug"
+      #copy the zlib 
+      cp -v build_vs_${ARCH}/3rdparty/lib/Release/*.lib "${DEPLOY_PATH}/Release"
+      cp -v build_vs_${ARCH}/3rdparty/lib/Debug/*.lib "${DEPLOY_PATH}/Debug"
+
   elif [[ "$TYPE" == "ios" || "$TYPE" == "tvos" ]] ; then
     # Standard *nix style copy.
     # copy headers
@@ -675,16 +643,26 @@ function copy() {
     mkdir -p $1/lib/$TYPE
     cp -v lib/$TYPE/*.a $1/lib/$TYPE
   elif [ "$TYPE" == "android" ]; then
+    if [ $ABI = armeabi-v7a ] || [ $ABI = armeabi ]; then
+      local BUILD_FOLDER="build_android_arm"
+    elif [ $ABI = x86 ]; then
+      local BUILD_FOLDER="build_android_x86"
+    fi
+    
     cp -r include/opencv $1/include/
     cp -r include/opencv2 $1/include/
     
-    rm -f platforms/build_android_arm/lib/armeabi-v7a/*pch_dephelp.a
-    rm -f platforms/build_android_arm/lib/armeabi-v7a/*.so
-    cp -r platforms/build_android_arm/lib/armeabi-v7a $1/lib/$TYPE/
+    rm -f platforms/$BUILD_FOLDER/lib/$ABI/*pch_dephelp.a
+    rm -f platforms/$BUILD_FOLDER/lib/$ABI/*.so
+    cp -r platforms/$BUILD_FOLDER/lib/$ABI $1/lib/$TYPE/
     
-    rm -f platforms/build_android_x86/lib/x86/*pch_dephelp.a
-    rm -f platforms/build_android_x86/lib/x86/*.so
-    cp -r platforms/build_android_x86/lib/x86 $1/lib/$TYPE/
+  elif [ "$TYPE" == "emscripten" ]; then
+    cp -r include/opencv $1/include/
+    cp -r include/opencv2 $1/include/
+    
+    rm -f build_emscripten/lib/*pch_dephelp.a
+    rm -f build_emscripten/lib/*.so
+    cp -r build_emscripten/lib/*.a $1/lib/$TYPE/
   fi
 
   # copy license file

@@ -4,7 +4,9 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -197,10 +199,11 @@ public class OFAndroidVideoGrabber extends OFAndroidObject implements Runnable, 
 			camera.setPreviewCallback(null);
 			try {
 				if (Build.VERSION.SDK_INT >= 11) {
-					camera.setPreviewTexture(surfaceTexture);
+					camera.setPreviewTexture(null);
 				}
 			} catch (Exception e) {
 			}
+			surfaceTexture.release();
 			camera.release();
 			//orientationListener.disable();
 			initialized = false;
@@ -307,7 +310,7 @@ public class OFAndroidVideoGrabber extends OFAndroidObject implements Runnable, 
 		}
 		
 	}
-	
+
 	private AutoFocusCB autoFocusCB = new AutoFocusCB();
 	
 	@Override

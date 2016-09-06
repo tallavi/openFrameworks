@@ -207,6 +207,19 @@ ofPixels_<PixelType>::ofPixels_(ofPixels_<PixelType> && mom)
 	mom.pixelsOwner = false;
 }
 
+
+template<typename PixelType>
+void ofPixels_<PixelType>::swap(ofPixels_<PixelType> & pix){
+	std::swap(pixels,pix.pixels);
+	std::swap(width, pix.width);
+	std::swap(height,pix.height);
+	std::swap(pixelsSize,pix.pixelsSize);
+	std::swap(bAllocated, pix.bAllocated);
+	std::swap(pixelsOwner, pix.pixelsOwner);
+	std::swap(pixelFormat,pix.pixelFormat);
+}
+
+
 template<typename PixelType>
 ofPixels_<PixelType>& ofPixels_<PixelType>::operator=(const ofPixels_<PixelType> & mom){
 	if(this==&mom) {
@@ -397,17 +410,6 @@ void ofPixels_<PixelType>::setFromAlignedPixels(const PixelType * newPixels, int
 	    break;
 	}
 	return;
-}
-
-template<typename PixelType>
-void ofPixels_<PixelType>::swap(ofPixels_<PixelType> & pix){
-	std::swap(pixels,pix.pixels);
-	std::swap(width, pix.width);
-	std::swap(height,pix.height);
-	std::swap(pixelFormat,pix.pixelFormat);
-	std::swap(pixelsSize,pix.pixelsSize);
-	std::swap(pixelsOwner, pix.pixelsOwner);
-	std::swap(bAllocated, pix.bAllocated);
 }
 
 template<typename PixelType>
@@ -1174,7 +1176,7 @@ void ofPixels_<PixelType>::mirrorTo(ofPixels_<PixelType> & dst, bool vertically,
 		int hToDo = height;
 		for (int i = 0; i < wToDo; i++){
 			for (int j = 0; j < hToDo; j++){
-				int pixelb = i;
+				int pixelb = j*width + (width - 1 - i);
 				int pixela = j*width + i;
 				for (int k = 0; k < bytesPerPixel; k++){
 					dst[pixela*bytesPerPixel + k] = pixels[pixelb*bytesPerPixel + k];
