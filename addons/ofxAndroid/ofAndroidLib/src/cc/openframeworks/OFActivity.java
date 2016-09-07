@@ -8,7 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-public abstract class OFActivity extends Activity{
+public class OFActivity extends Activity{
 	public void onGLSurfaceCreated(){}
 	public void onLoadPercent(float percent){}
 	public void onUnpackingResourcesDone(){}

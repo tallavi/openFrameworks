@@ -104,9 +104,6 @@ public class OFAndroidLifeCycleHelper
 					} catch (Exception e) {
 						Log.e("OF", "error copying file", e);
 					}
-
-    					if(fileName.equals("/ofdataresources.zip")){
-
 				}
 
 			}else{

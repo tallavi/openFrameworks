@@ -27,15 +27,15 @@ public class OFAndroidLifeCycle
             Log.i("OF","failed x86 loading, trying neon detection",ex);
             
             try{
-                System.loadLibrary("neondetection");
-                if(OFAndroid.hasNeon()){
-                    Log.i("OF","loading neon optimized library");
-                    System.loadLibrary("OFAndroidApp_neon");
-                }
-                else{
+//                System.loadLibrary("neondetection");
+//                if(OFAndroid.hasNeon()){
+//                    Log.i("OF","loading neon optimized library");
+//                    System.loadLibrary("OFAndroidApp_neon");
+//                }
+//                else{
                     Log.i("OF","loading not-neon optimized library");
                     System.loadLibrary("OFAndroidApp");
-                }
+//                }
             }catch(Throwable ex2){
                 Log.i("OF","failed neon detection, loading not-neon library",ex2);
                 System.loadLibrary("OFAndroidApp");
@@ -278,13 +278,13 @@ public class OFAndroidLifeCycle
     }
 	
 	private static void glResumed(){
-		m_activity.runOnUiThread(new Runnable() {
-			
-			@Override
-			public void run() {
-				mGLView.setVisibility(View.VISIBLE);
-			}
-		});
+//		m_activity.runOnUiThread(new Runnable() {
+//			
+//			@Override
+//			public void run() {
+//				mGLView.setVisibility(View.VISIBLE);
+//			}
+//		});
 	}
 	
 	static Activity getActivity(){
@@ -357,7 +357,7 @@ public class OFAndroidLifeCycle
 	public static void glResume(ViewGroup glContainer)
 	{
 		View glView = getGLView();
-		glView.setVisibility(View.INVISIBLE);
+//		glView.setVisibility(View.INVISIBLE);
 		ViewGroup parent = (ViewGroup)glView.getParent();
 		if(parent != glContainer){
 			if(parent != null){

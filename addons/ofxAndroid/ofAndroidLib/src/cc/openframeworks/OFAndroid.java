@@ -147,16 +147,6 @@ public class OFAndroid {
 			((OFActivity)activity).onLoadPercent(precent);
 	}
 	
-	static void initOFAndroid(String appPackageName, OFActivity activity)
-	{
-		Log.i("OF","OFAndroid init...");
-		OFAndroid.ofActivity = activity;
-		ofActivity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
-		//Log.i("OF","external files dir: "+ ofActivity.getApplicationContext().getExternalFilesDir(null));
-		OFAndroid.packageName = appPackageName;
-		OFAndroidObject.setActivity(ofActivity);
-	}
-	
 	static void fatalErrorDialog(final Activity activity, final String msg){
 		activity.runOnUiThread(new Runnable(){
 			public void run() {
@@ -470,17 +460,17 @@ public class OFAndroid {
     		break;
     	case 270:
 			if (Build.VERSION.SDK_INT >= 9) {
-				ofActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+				OFAndroidLifeCycle.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
 				break;
 			}
-    		ofActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+			OFAndroidLifeCycle.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     		break;
     	case 180:
 			if (Build.VERSION.SDK_INT >= 9) {
-				ofActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+				OFAndroidLifeCycle.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
 				break;
 			}
-    		ofActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+			OFAndroidLifeCycle.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     		break;
     	case -1:
     		OFAndroidLifeCycle.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
@@ -794,7 +784,7 @@ public class OFAndroid {
 
 	public static void enableOrientationChangeEvents(){
 		if(orientationListener == null)
-			orientationListener = new OFOrientationListener(getContext());
+			orientationListener = new OFOrientationListener(OFAndroidLifeCycle.getActivity());
 		orientationListener.enable();
 	}
 
