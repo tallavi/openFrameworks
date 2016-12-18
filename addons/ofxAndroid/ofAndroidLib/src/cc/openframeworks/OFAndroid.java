@@ -16,7 +16,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.hardware.SensorManager;
-import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -26,7 +25,6 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.ScaleGestureDetector;
-import android.view.SurfaceView;
 import android.view.WindowManager.LayoutParams;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
@@ -49,6 +47,10 @@ public class OFAndroid {
 			"/mnt/Removable/MicroSD",
 			"/Removable/MicroSD",
 			"/sdcard"};
+		
+	private static String getPackageName(){
+		return OFAndroidLifeCycle.getActivity().getPackageName();
+	}
 	
 	public static String getRealExternalStorageDirectory(Context context)
 	{				
@@ -127,29 +129,20 @@ public class OFAndroid {
 
 	static void runOnMainThread(Runnable runnable)
 	{
-		ofActivity.runOnUiThread(runnable);
+		OFAndroidLifeCycle.getActivity().runOnUiThread(runnable);
 	}
 	
 	static void runOnGLThread(Runnable runnable)
 	{
-		ofActivity.getGLContentView().queueEvent(runnable);
+		OFAndroidLifeCycle.getGLView().queueEvent(runnable);
 	}
 	
 	
 	static void reportPrecentage(float precent)
 	{
-		if(ofActivity != null)
-			ofActivity.onLoadPercent(precent);
-	}
-	
-	static void initOFAndroid(String appPackageName, OFActivity activity)
-	{
-		Log.i("OF","OFAndroid init...");
-		OFAndroid.ofActivity = activity;
-		ofActivity.setVolumeControlStream(AudioManager.STREAM_MUSIC);
-		//Log.i("OF","external files dir: "+ ofActivity.getApplicationContext().getExternalFilesDir(null));
-		OFAndroid.packageName = appPackageName;
-		OFAndroidObject.setActivity(ofActivity);
+		Activity activity = OFAndroidLifeCycle.getActivity();
+		if(activity != null && OFActivity.class.isInstance(activity))
+			((OFActivity)activity).onLoadPercent(precent);
 	}
 	
 	static void fatalErrorDialog(final Activity activity, final String msg){
@@ -173,13 +166,14 @@ public class OFAndroid {
 	
 	static public void onUnpackingResourcesDone(){
 		unpackingDone = true;
-		if(ofActivity != null)
-			ofActivity.onUnpackingResourcesDone();
+		Activity activity = OFAndroidLifeCycle.getActivity();
+		if(activity != null && OFActivity.class.isInstance(activity))
+			((OFActivity)activity).onUnpackingResourcesDone();
 	}
 	
 	static public boolean menuItemSelected(int id){
 		try {
-			Class<?> menu_ids = Class.forName(packageName+".R$id");
+			Class<?> menu_ids = Class.forName(getPackageName()+".R$id");
 			Field[] fields = menu_ids.getFields();
 			for(Field field: fields){
 				Log.i("OF", "checking " + field.getName());
@@ -195,7 +189,7 @@ public class OFAndroid {
 	
 	static public boolean menuItemChecked(int id, boolean checked){
 		try {
-			Class<?> menu_ids = Class.forName(packageName+".R$id");
+			Class<?> menu_ids = Class.forName(getPackageName()+".R$id");
 			Field[] fields = menu_ids.getFields();
 			for(Field field: fields){
 				if(id == field.getInt(null)){
@@ -210,10 +204,10 @@ public class OFAndroid {
 	
 	static public void setMenuItemChecked(String idStr, boolean checked){
 		final String id = idStr;
-		ofActivity.runOnUiThread(new Runnable(){
+		runOnMainThread(new Runnable(){
 			public void run() {
 				try {
-					Class<?> menu_ids = Class.forName(packageName+".R$id");
+					Class<?> menu_ids = Class.forName(getPackageName()+".R$id");
 					Field field = menu_ids.getField(id);
 					//ofActivity.getMenuInflater().
 				} catch (Exception e) {
@@ -226,12 +220,12 @@ public class OFAndroid {
 	static public void setViewItemChecked(String idStr, boolean checked){
 		final String id = idStr;
 		final boolean fchecked = checked;
-		ofActivity.runOnUiThread(new Runnable(){
+		runOnMainThread(new Runnable(){
 			public void run() {
 				try {
-					Class<?> menu_ids = Class.forName(packageName+".R$id");
+					Class<?> menu_ids = Class.forName(getPackageName()+".R$id");
 					Field field = menu_ids.getField(id);
-					CompoundButton checkbox = (CompoundButton) ofActivity.findViewById(field.getInt(null));
+					CompoundButton checkbox = (CompoundButton) OFAndroidLifeCycle.getActivity().findViewById(field.getInt(null));
 					checkbox.setChecked(fchecked);
 				} catch (Exception e) {
 					Log.w("OF","Trying to get menu items ", e);
@@ -243,10 +237,10 @@ public class OFAndroid {
 	static public String getStringRes(String idStr){
 		Class<?> string_ids;
 		try {
-			string_ids = Class.forName(packageName+".R$string");
+			string_ids = Class.forName(getPackageName()+".R$string");
 			Field field = string_ids.getField(idStr);
 			int id = field.getInt(null);
-			return (String) ofActivity.getResources().getText(id);
+			return (String) OFAndroidLifeCycle.getActivity().getResources().getText(id);
 		} catch (Exception e) {
 			Log.e("OF","Couldn't get string resource",e);
 		} 
@@ -264,7 +258,7 @@ public class OFAndroid {
 	
 	static public boolean isWifiOnline(){
 		try{
-			ConnectivityManager conMgr =  (ConnectivityManager)ofActivity.getSystemService(Context.CONNECTIVITY_SERVICE);
+			ConnectivityManager conMgr =  (ConnectivityManager)OFAndroidLifeCycle.getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
 			return conMgr!=null && ( conMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED  ) ;
 		}catch(Exception e){
 			Log.e("OF","error checking wifi connection",e);
@@ -274,7 +268,7 @@ public class OFAndroid {
 	
 	static public boolean isMobileOnline(){
 		try{
-			ConnectivityManager conMgr =  (ConnectivityManager)ofActivity.getSystemService(Context.CONNECTIVITY_SERVICE);
+			ConnectivityManager conMgr =  (ConnectivityManager)OFAndroidLifeCycle.getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
 			
 			return conMgr!=null && ( conMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED  ) ;
 		}catch(Exception e){
@@ -296,7 +290,7 @@ public class OFAndroid {
 	{
 		if(OFAndroid.networkStateReceiver!=null){
 			try{
-				OFAndroid.ofActivity.unregisterReceiver(OFAndroid.networkStateReceiver);
+				OFAndroidLifeCycle.getActivity().unregisterReceiver(OFAndroid.networkStateReceiver);
 			}catch(java.lang.IllegalArgumentException e){
 				
 			}
@@ -323,12 +317,12 @@ public class OFAndroid {
 		    }
 		};
 		IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);        
-		ofActivity.registerReceiver(networkStateReceiver, filter);
+		OFAndroidLifeCycle.getActivity().registerReceiver(networkStateReceiver, filter);
 		networkConnected(isOnline());
 	}
 	
 	static public void launchBrowser(String url){
-		ofActivity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+		OFAndroidLifeCycle.getActivity().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
 	}
 	
 	
@@ -337,9 +331,9 @@ public class OFAndroid {
 	static public int progressBox(String msg){
 		final String finmsg = msg;
 		final int id = lastProgressID++;
-		ofActivity.runOnUiThread(new Runnable(){
+		runOnMainThread(new Runnable(){
 			public void run() {
-				ProgressDialog d = new ProgressDialog(ofActivity);
+				ProgressDialog d = new ProgressDialog(OFAndroidLifeCycle.getActivity());
 				d.setMessage(finmsg);
 				d.setCancelable(false);
 				d.show();
@@ -353,7 +347,7 @@ public class OFAndroid {
 		final int dId = id;
 		final ProgressDialog d = progressDialogs.get(id);
 		if(d!=null){
-			ofActivity.runOnUiThread(new Runnable(){
+			runOnMainThread(new Runnable(){
 				public void run() {
 					d.dismiss();
 					progressDialogs.remove(dId);
@@ -446,10 +440,6 @@ public class OFAndroid {
     	//ofActivity.getWindow().setAttributes(attrs);
     }
     
-	public static void doNothing(){
-		Log.i("OF",	"initApp");
-	}
-    
     public static int getOrientation()
     {
     	return orientation;
@@ -460,36 +450,36 @@ public class OFAndroid {
     	OFAndroid.orientation = orientation;
     	switch(orientation){
     	case 0:
-    		ofActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+    		OFAndroidLifeCycle.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     		break;
     	case 90:
-    		ofActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+    		OFAndroidLifeCycle.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     		break;
     	case 270:
-    		ofActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+    		OFAndroidLifeCycle.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     		break;
     	case 180:
-    		ofActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+    		OFAndroidLifeCycle.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     		break;
     	case -1:
-    		ofActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+    		OFAndroidLifeCycle.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
     		break;
     	}
     }
     
     public static void pauseApp(){
-		ofActivity.moveTaskToBack(true);
+    	OFAndroidLifeCycle.getActivity().moveTaskToBack(true);
     }
 
 	
 	public static void setupAccelerometer(){
 		if(accelerometer==null)
-			accelerometer = new OFAndroidAccelerometer((SensorManager)ofActivity.getSystemService(Context.SENSOR_SERVICE));
+			accelerometer = new OFAndroidAccelerometer((SensorManager)OFAndroidLifeCycle.getActivity().getSystemService(Context.SENSOR_SERVICE));
 	}
 	
 	static MulticastLock mcLock;
 	public static void enableMulticast(){
-		WifiManager wifi = (WifiManager)ofActivity.getSystemService( Context.WIFI_SERVICE );
+		WifiManager wifi = (WifiManager)OFAndroidLifeCycle.getActivity().getSystemService( Context.WIFI_SERVICE );
 		if(wifi != null)
 		{
 		    mcLock = wifi.createMulticastLock("mylock");
@@ -516,9 +506,9 @@ public class OFAndroid {
 	            throw new RuntimeException();
 	        } 
 	    };*/
-		ofActivity.runOnUiThread(new Runnable(){
+		runOnMainThread(new Runnable(){
 			public void run() {
-				new AlertDialog.Builder(ofActivity)  
+				new AlertDialog.Builder(OFAndroidLifeCycle.getActivity())  
 					.setMessage(alertMsg)  
 					.setTitle("")  
 					.setCancelable(false)  
@@ -554,9 +544,9 @@ public class OFAndroid {
 	            throw new RuntimeException();
 	        } 
 	    };*/
-		ofActivity.runOnUiThread(new Runnable(){
+		runOnMainThread(new Runnable(){
 			public void run() {
-				new AlertDialog.Builder(ofActivity)  
+				new AlertDialog.Builder(OFAndroidLifeCycle.getActivity())  
 					.setMessage(alertMsg)  
 					.setTitle("OF")  
 					.setCancelable(false)  
@@ -609,10 +599,11 @@ public class OFAndroid {
 	        } 
 	    };*/
 	    textBoxResult=text;
-		ofActivity.runOnUiThread(new Runnable(){
+		runOnMainThread(new Runnable(){
 			public void run() {
-				final EditText input = new EditText(ofActivity); 
-					new AlertDialog.Builder(ofActivity)  
+				Activity activity = OFAndroidLifeCycle.getActivity();
+				final EditText input = new EditText(activity); 
+					new AlertDialog.Builder(activity)  
 					.setMessage(alertMsg)  
 					.setTitle(alertQuestion)  
 					.setCancelable(false)  
@@ -659,12 +650,13 @@ public class OFAndroid {
 	        } 
 	    };*/
 	    alertListResult=false;
-		ofActivity.runOnUiThread(new Runnable(){
+		runOnMainThread(new Runnable(){
 			public void run() {
-				final ListView listView = new ListView(ofActivity); 
-				final ListAdapter adapter = new ArrayAdapter<String>(ofActivity, android.R.layout.simple_list_item_1, alertList);
+				Activity activity = OFAndroidLifeCycle.getActivity();
+				final ListView listView = new ListView(activity); 
+				final ListAdapter adapter = new ArrayAdapter<String>(activity, android.R.layout.simple_list_item_1, alertList);
 				listView.setAdapter(adapter);
-				new AlertDialog.Builder(ofActivity)   
+				new AlertDialog.Builder(activity)   
 					.setTitle(alertTitle)  
 					.setCancelable(false)  
 					.setNeutralButton(android.R.string.ok,  
@@ -699,16 +691,12 @@ public class OFAndroid {
 	public static void toast(String msg){  
 		if(msg=="") return;
 		final String alertMsg = msg;
-		ofActivity.runOnUiThread(new Runnable(){
+		runOnMainThread(new Runnable(){
 			public void run() {
-				Toast toast = Toast.makeText(ofActivity, alertMsg, Toast.LENGTH_SHORT);
+				Toast toast = Toast.makeText(OFAndroidLifeCycle.getActivity(), alertMsg, Toast.LENGTH_SHORT);
 	        	toast.show();  
 			}  
 		});
-	}
-	
-	public static Context getContext(){
-		return ofActivity;
 	}
 	
 	public static String toDataPath(String path){
@@ -719,13 +707,13 @@ public class OFAndroid {
 	
 	public static void lockScreenSleep(){
 		if(!sleepLocked){
-			ofActivity.runOnUiThread(new Runnable() {
+			runOnMainThread(new Runnable() {
 				
 				@Override
 				public void run() {
 					try{
 						sleepLocked=true;
-						ofActivity.getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
+						OFAndroidLifeCycle.getActivity().getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
 					}catch(Exception e){
 						
 					}
@@ -737,13 +725,13 @@ public class OFAndroid {
 	
 	public static void unlockScreenSleep(){
 		if(sleepLocked){
-			ofActivity.runOnUiThread(new Runnable() {
+			runOnMainThread(new Runnable() {
 			
 				@Override
 				public void run() {
 					try{
 						sleepLocked=false;
-				        ofActivity.getWindow().clearFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
+						OFAndroidLifeCycle.getActivity().getWindow().clearFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
 					}catch(Exception e){
 						
 					}
@@ -758,80 +746,34 @@ public class OFAndroid {
 	}
 	
 	public static boolean isApplicationSetup(){
-		OFGLSurfaceView glView = OFAndroid.getGLView();
-		return glView!=null && glView.isSetup();
+		return OFAndroidLifeCycle.getGLView().isSetup();
 	}
     
-//    private static OFGLSurfaceView glView;
     private static OFAndroidAccelerometer accelerometer;
     private static OFAndroidGPS gps;
-    private static OFActivity ofActivity;
-//    private static OFAndroid instance;
     private static OFGestureListener gestureListener;
-	static String packageName;
 	private static String dataPath;
 	public static boolean unpackingDone;
-	
-	static OFGLSurfaceView getGLView()
-	{
-		return ofActivity.getGLContentView();
-	}
 
     public static native boolean hasNeon();
-	 
-    static {
-        
-        Log.i("OF","static init");
-        
-        try {
-            Log.i("OF","loading x86 library");
-            System.loadLibrary("OFAndroidApp_x86");
-        }
-        catch(Throwable ex)	{
-            Log.i("OF","failed x86 loading, trying neon detection",ex);
-            
-            try{
-                System.loadLibrary("neondetection");
-                if(hasNeon()){
-                    Log.i("OF","loading neon optimized library");
-                    System.loadLibrary("OFAndroidApp_neon");
-                }
-                else{
-                    Log.i("OF","loading not-neon optimized library");
-                    System.loadLibrary("OFAndroidApp");
-                }
-            }catch(Throwable ex2){
-                Log.i("OF","failed neon detection, loading not-neon library",ex2);
-                System.loadLibrary("OFAndroidApp");
-            }
-        }
-        Log.i("OF","initializing app");
-    }
-
 	
 	public static void disableTouchEvents(){
-		OFGLSurfaceView glView = OFAndroid.getGLView();
-		if(glView!=null){
-	        glView.setOnClickListener(null); 
-	        glView.setOnTouchListener(null);
-		}
+		OFGLSurfaceView glView = OFAndroidLifeCycle.getGLView();
+        glView.setOnClickListener(null); 
+        glView.setOnTouchListener(null);
 	}
 	
 	public static void enableTouchEvents(){
-		OFGLSurfaceView glView = OFAndroid.getGLView();
-		if(glView!=null){
-			if(gestureListener == null)
-				gestureListener = new OFGestureListener(ofActivity);
-	        glView.setOnClickListener(gestureListener); 
-	        glView.setOnTouchListener(gestureListener.touchListener);
-		}
+		OFGLSurfaceView glView = OFAndroidLifeCycle.getGLView();
+		if(gestureListener == null)
+			gestureListener = new OFGestureListener(OFAndroidLifeCycle.getActivity());
+        glView.setOnClickListener(gestureListener); 
+        glView.setOnTouchListener(gestureListener.touchListener);
 	}
 	
 	public static void setupGL(int version){	
 		final int finalversion = version;
-		if(ofActivity == null)
-			Log.d("OF", "setupGL ofActivity == null!!");
-		ofActivity.runOnUiThread(new Runnable() {
+		runOnMainThread(new Runnable() {
 			
 			@Override
 			public void run() {

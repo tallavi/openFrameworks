@@ -30,7 +30,7 @@ public class OFAndroidLifeCycleHelper
 			return;
 		appInitFlag = true;
 		
-		OFAndroid.packageName = activity.getPackageName();
+		String packageName = activity.getPackageName();
 		
 		Log.i(TAG,"starting resources extractor");
 		Class<?> raw = null;
@@ -40,7 +40,7 @@ public class OFAndroidLifeCycleHelper
         	
 			// try to find if R.raw class exists will throw
         	// an exception if not
-        	raw = Class.forName(OFAndroid.packageName+".R$raw");
+        	raw = Class.forName(packageName+".R$raw");
         	// if it exists copy all the raw resources
         	// to a folder in the sdcard
 	        files = raw.getDeclaredFields(); 
@@ -50,7 +50,7 @@ public class OFAndroidLifeCycleHelper
 	        
 	        PackageManager pm = activity.getPackageManager();
 
-			ApplicationInfo appInfo = pm.getApplicationInfo(OFAndroid.packageName, 0);
+			ApplicationInfo appInfo = pm.getApplicationInfo(packageName, 0);
 
 	        String appFile = appInfo.sourceDir;
 	        long installed = new File(appFile).lastModified();
@@ -90,7 +90,7 @@ public class OFAndroidLifeCycleHelper
 				OFAndroid.fatalErrorDialog(activity, "Error while copying resources to sdcard:\nCouldn't create directory " + dataPath + "\n"+e.getMessage());
 				Log.e(TAG,"error creating dir " + dataPath,e);
 			}
-			OFAndroid.moveOldData(OFAndroid.getOldExternalStorageDirectory(OFAndroid.packageName), dataPath);
+			OFAndroid.moveOldData(OFAndroid.getOldExternalStorageDirectory(packageName), dataPath);
 			OFAndroid.setAppDataDir(dataPath);
 	        OFAndroid.reportPrecentage(.10f);
 		}catch(Exception e){
@@ -99,7 +99,6 @@ public class OFAndroidLifeCycleHelper
 		
 		
 		try {
-			int app_name_id = Class.forName(OFAndroid.packageName+".R$string").getField("app_name").getInt(null);
 			
 			if(copydata){
 				StatFs stat = new StatFs(dataPath);
@@ -185,6 +184,7 @@ public class OFAndroidLifeCycleHelper
 	
 	public static void onCreate()
 	{
+		Log.d(TAG, "onCreate");
 //		OFAndroid.initOFAndroid(activity.getPackageName(), activity);
 		OFAndroid.onCreate();
 		OFAndroid.onUnpackingResourcesDone();
@@ -218,8 +218,8 @@ public class OFAndroidLifeCycleHelper
 	}
 	
 	public static void onResume(){
-		final OFGLSurfaceView glView = OFAndroid.getGLView();
-		if(glView == null || resumed) return;
+		final OFGLSurfaceView glView = OFAndroidLifeCycle.getGLView();
+		if(resumed) return;
 		Log.i(TAG,"onResume");
 		resumed = true;
 		OFAndroid.runOnMainThread(new Runnable() {
@@ -262,8 +262,7 @@ public class OFAndroidLifeCycleHelper
 						object.onPause();
 					}
 				}
-				OFGLSurfaceView glView = OFAndroid.getGLView();
-				if(glView != null) glView.onPause();
+				OFAndroidLifeCycle.getGLView().onPause();
 			}
 		});
 		
