@@ -264,16 +264,18 @@ class OFAndroidWindow implements GLSurfaceView.Renderer {
 	
 	@Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-		Log.i("OF","onSurfaceCreated");
+		Log.i("OF","OFAndroidWindow.onSurfaceCreated begin");
 		OFAndroid.onSurfaceCreated();
 		Activity activity = OFAndroidLifeCycle.getActivity();
 		if(OFActivity.class.isInstance(activity))
 			((OFActivity)activity).onGLSurfaceCreated();
+		Log.i("OF","OFAndroidWindow.onSurfaceCreated end");
 		return;
     }
 	
 	@Override
     public void onSurfaceChanged(GL10 gl, int w, int h) {
+		Log.d("OF", "OFAndroidWindow.onSurfaceChanged begin");
 		this.w = w;
 		this.h = h;
     	if(!setup && OFAndroid.unpackingDone){
@@ -282,9 +284,11 @@ class OFAndroidWindow implements GLSurfaceView.Renderer {
     	OFGestureListener.swipe_Min_Distance = (int)(Math.max(w, h)*.04);
     	OFGestureListener.swipe_Max_Distance = (int)(Math.max(w, h)*.6);
     	OFAndroid.resize(w, h);
+    	Log.d("OF", "OFAndroidWindow.onSurfaceChanged end");
     }
     
     private void setup(){
+    	Log.d("OF", "OFAndroidWindow.setup begin");
     	OFAndroid.setup(w,h);
     	setup = true;
     	android.os.Process.setThreadPriority(8);
@@ -293,6 +297,7 @@ class OFAndroidWindow implements GLSurfaceView.Renderer {
     	Activity activity = OFAndroidLifeCycle.getActivity();
 		if(OFActivity.class.isInstance(activity))
 			((OFActivity)activity).onGLSurfaceCreated();
+		Log.d("OF", "OFAndroidWindow.setup end");
     }
     
     public static void exit() {
