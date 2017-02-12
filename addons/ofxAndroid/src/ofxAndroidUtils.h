@@ -51,6 +51,10 @@ int ofxJavaCallIntMethod(jobject object, jclass classID, std::string methodName,
 int ofxJavaCallIntMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, ...);
 int ofxJavaCallIntMethod(jobject object, std::string className, std::string methodName, std::string methodSignature, ...);
 
+int ofxJavaCallStaticIntMethod(jclass classID, std::string methodName, std::string methodSignature, va_list args);
+int ofxJavaCallStaticIntMethod(jclass classID, std::string methodName, std::string methodSignature, ...);
+int ofxJavaCallStaticIntMethod(std::string className, std::string methodName, std::string methodSignature, ...);
+
 int64_t ofxJavaCallLongMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, va_list args);
 int64_t ofxJavaCallLongMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, ...);
 int64_t ofxJavaCallLongMethod(jobject object, std::string className, std::string methodName, std::string methodSignature, ...);

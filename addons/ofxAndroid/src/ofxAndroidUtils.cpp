@@ -699,6 +699,51 @@ void ofxJavaCallStaticVoidMethod(std::string className, std::string methodName, 
 	ofGetJNIEnv()->DeleteLocalRef(classID);
 }
 
+int ofxJavaCallStaticIntMethod(jclass classID, std::string methodName, std::string methodSignature, va_list args){
+	jmethodID methodID = ofxJavaGetStaticMethodID(classID, methodName, methodSignature);
+
+	if (!methodID){
+		ofLogError() << "Couldn't find " << methodName << " for integer call";
+		return 0;
+	}
+
+	return ofGetJNIEnv()->CallStaticIntMethodV(classID, methodID, args);
+}
+
+int ofxJavaCallStaticIntMethod(jclass classID, std::string methodName, std::string methodSignature, ...){
+	int result;
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	result = ofxJavaCallStaticIntMethod(classID, methodName, methodSignature, args);
+
+	va_end(args);
+	return result;
+}
+
+int ofxJavaCallStaticIntMethod(std::string className, std::string methodName, std::string methodSignature, ...){
+
+	jclass classID = ofxJavaGetClassID(className);
+
+	if (!classID){
+		ofLogError() << "Couldn't find " << methodName << " for integer call";
+		return 0;
+	}
+
+	int result;
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	result = ofxJavaCallStaticIntMethod(classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	ofGetJNIEnv()->DeleteLocalRef(classID);
+	return result;
+}
+
 float ofxJavaCallFloatMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, va_list args){
 	jmethodID methodID = ofxJavaGetMethodID(classID, methodName, methodSignature);
 
