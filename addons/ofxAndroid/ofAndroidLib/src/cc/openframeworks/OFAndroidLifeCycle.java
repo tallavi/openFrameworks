@@ -57,6 +57,8 @@ public class OFAndroidLifeCycle
 	
 	private static OFGLSurfaceView mGLView = null;
 	
+	private static boolean m_recreateSurface = false;
+	
 	private static void pushState(State state)
 	{
 //        close
@@ -251,8 +253,14 @@ public class OFAndroidLifeCycle
 	}
 
 	
-	public static void init()
+	public static void init() {
+		init(true);
+	}
+	
+	public static void init(boolean recreateSurface)
 	{
+		m_recreateSurface = recreateSurface;
+		
 		if(m_currentState != null)
 		{
 			return;
@@ -266,13 +274,20 @@ public class OFAndroidLifeCycle
 	public static void glCreate()
 	{
 		Log.d(TAG, "glCreate");
+		
 		if(mGLView == null)
 		{
 			Log.d(TAG, "Create surface");
 			mGLView = new OFGLSurfaceView(m_activity);
+			
+			if (!m_recreateSurface)
+				pushState(State.create);
 		}
-		if(m_countActivities == 0)
+		
+		if (m_recreateSurface && m_countActivities == 0) {
 			pushState(State.create);
+		}
+		
 		m_countActivities++;
 	}
 	
@@ -303,7 +318,7 @@ public class OFAndroidLifeCycle
 	{
 		Log.d(TAG, "glDestroy");
 		m_countActivities--;
-		if(m_countActivities == 0){
+		if(m_recreateSurface && m_countActivities == 0){
 			Log.d(TAG, "glDestroy destroy ofApp");
 			pushState(State.destroy);
 		}
