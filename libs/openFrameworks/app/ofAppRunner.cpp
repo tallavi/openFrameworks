@@ -201,6 +201,8 @@ shared_ptr<ofAppBaseWindow> ofCreateWindow(const ofWindowSettings & settings){
 //							at the end of the application
 
 void ofExitCallback(){
+	ofLogNotice("ofAppRunner") << "ofExitCallback START";
+	
 	if(!initialized()) return;
 
 	// controlled destruction of the mainLoop before
@@ -249,6 +251,8 @@ void ofExitCallback(){
         of::priv::endutils();
 
 	initialized() = false;
+	
+	ofLogNotice("ofAppRunner") << "ofExitCallback END";
 }
 
 //--------------------------------------

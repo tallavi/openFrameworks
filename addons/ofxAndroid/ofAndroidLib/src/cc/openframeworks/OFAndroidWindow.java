@@ -244,7 +244,9 @@ class OFGLSurfaceView extends GLSurfaceView{
 
     @Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
+    	Log.d("OF", "OFAndroidWindow surfaceDestroyed");
     	super.surfaceDestroyed(holder);
+    	
 		OFAndroid.onSurfaceDestroyed();
 	}
     

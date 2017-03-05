@@ -150,7 +150,13 @@ void ofMainLoop::pollEvents(){
 }
 
 void ofMainLoop::exit(){
+	
+	ofLogNotice("ofMainLoop") << "exit START";
+	
 	for(auto i: windowsApps){
+		
+		ofLogNotice("ofMainLoop") << "exiting window";
+		
 		shared_ptr<ofAppBaseWindow> window = i.first;
 		shared_ptr<ofBaseApp> app = i.second;
 		
@@ -160,6 +166,8 @@ void ofMainLoop::exit(){
 		if(app == nullptr) {
 			continue;
 		}
+		
+		ofLogNotice("ofMainLoop") << "removing events";
 		
 		ofRemoveListener(window->events().setup,app.get(),&ofBaseApp::setup,OF_EVENT_ORDER_APP);
 		ofRemoveListener(window->events().update,app.get(),&ofBaseApp::update,OF_EVENT_ORDER_APP);
@@ -196,10 +204,15 @@ void ofMainLoop::exit(){
 			ofRemoveListener(ofxAndroidEvents().swipe,androidApp,&ofxAndroidApp::swipe,OF_EVENT_ORDER_APP);
 		}
 #endif
+		ofLogNotice("ofMainLoop") << "removed events";
 	}
 	
+	ofLogNotice("ofMainLoop") << "notifying exit";
 	exitEvent.notify(this);
+	ofLogNotice("ofMainLoop") << "clearing windowsApps";
 	windowsApps.clear();
+	
+	ofLogNotice("ofMainLoop") << "exit END";
 }
 
 shared_ptr<ofAppBaseWindow> ofMainLoop::getCurrentWindow(){
