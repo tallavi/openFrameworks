@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.app.Activity;
 import android.media.AudioManager;
+import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -293,24 +294,37 @@ public class OFAndroidLifeCycle
 	
 	public static void glResume(ViewGroup glContainer)
 	{
-		View glView = getGLView();
-		glView.setVisibility(View.INVISIBLE);
-		ViewGroup parent = (ViewGroup)glView.getParent();
-		if(parent != glContainer){
-			if(parent != null){
-				Log.d(TAG, "remove surface");
-				parent.removeView(glView);
-			}
-			glContainer.addView(glView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-			Log.d(TAG, "addView surface");
-		}
 		Log.d(TAG, "glResume");
+		
+		View glView = getGLView();
+		
+		glView.setVisibility(View.INVISIBLE);	
+	
+		Log.d(TAG, "adding surface");
+		glContainer.addView(glView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+		Log.d(TAG, "added surface");
+		
+		((GLSurfaceView)glView).onResume();
+		
 		pushState(State.resume);
 	}
 	
 	public static void glPause()
 	{
 		Log.d(TAG, "glPause");
+		
+		View glView = getGLView();
+		ViewGroup parent = (ViewGroup)glView.getParent();
+		
+		((GLSurfaceView)glView).onPause();
+		
+		if(parent != null){
+			Log.d(TAG, "removing surface");
+			parent.removeView(glView);
+			Log.d(TAG, "removed surface");
+		}	
+		
+		
 		pushState(State.pause);
 	}
 	

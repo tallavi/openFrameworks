@@ -228,7 +228,6 @@ public class OFAndroidLifeCycleHelper
 			public void run() {
 				// TODO Auto-generated method stub
 				OFAndroid.enableTouchEvents();
-				glView.onResume();
 				synchronized (OFAndroidObject.ofObjects) {
 					for(OFAndroidObject object : OFAndroidObject.ofObjects){
 						object.onResume();
@@ -262,7 +261,6 @@ public class OFAndroidLifeCycleHelper
 						object.onPause();
 					}
 				}
-				OFAndroidLifeCycle.getGLView().onPause();
 			}
 		});
 		
